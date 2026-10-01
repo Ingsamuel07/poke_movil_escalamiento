@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: poke-backend-nodejs
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false

@@ -9,31 +9,35 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-
-import { usePokemon } from "../context/PokemonContext";
+import { useNaruto } from "../context/NarutoContext";
 import BottomThumbBar from "../components/BottomThumbBar";
 import ApiConfigModal from "../components/ApiConfigModal";
 
-export default function HomeScreen({ navigation }) {
+export default function NarutoHomeScreen({ navigation }) {
   const [name, setName] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
 
   const {
-    pokemon,
-    pokemonList,
+    character,
+    characterList,
     loading,
     loadingList,
     error,
-    searchPokemon,
-    selectPokemon,
-    loadPokemonList,
-  } = usePokemon();
+    searchCharacter,
+    selectCharacter,
+    loadCharacterList,
+  } = useNaruto();
 
   const handleSearch = () => {
     if (name.trim()) {
-      searchPokemon(name);
+      searchCharacter(name);
     }
   };
+
+  // Obtener las 3 imágenes a mostrar
+  const mainImage = character?.imagen || character?.imagenes?.[0];
+  const secondImage = character?.imagenes?.[1] || mainImage;
+  const thirdImage = character?.imagenes?.[2] || secondImage || mainImage;
 
   return (
     <View style={styles.container}>
@@ -44,9 +48,9 @@ export default function HomeScreen({ navigation }) {
         {/* HEADER CON TÍTULO Y BOTÓN DE CONFIGURACIÓN */}
         <View style={styles.header}>
           <View style={styles.titleBox}>
-            <Text style={styles.title}>POKÉMON</Text>
+            <Text style={styles.title}>ANIME HEROES</Text>
             <View style={styles.badgeBox}>
-              <Text style={styles.badgeText}>⚡ BD Relacional (Node.js & Nube)</Text>
+              <Text style={styles.badgeText}>🍃 BD No Relacional (Python & MongoDB Atlas)</Text>
             </View>
           </View>
           <TouchableOpacity
@@ -62,7 +66,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Busca un Pokémon o ID (ej. 25, pikachu)"
+            placeholder="Busca por personaje o anime (ej. Luffy, Goku)"
             placeholderTextColor="#888"
             value={name}
             onChangeText={setName}
@@ -78,16 +82,16 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* SELECTOR DE LOS 10 POKÉMON ALMACENADOS EN BD RELACIONAL */}
+        {/* SELECTOR DE LOS 10 PERSONAJES DE ANIME EN MONGODB */}
         <View style={styles.chipsSection}>
           <View style={styles.chipsHeader}>
             <Text style={styles.chipsTitle}>
-              10 POKÉMON EN BD RELACIONAL ({pokemonList.length}/10):
+              10 PERSONAJES EN MONGODB ATLAS ({characterList.length}/10):
             </Text>
             {loadingList ? (
-              <ActivityIndicator size="small" color="#ff7a21" />
+              <ActivityIndicator size="small" color="#f97316" />
             ) : (
-              <TouchableOpacity onPress={loadPokemonList}>
+              <TouchableOpacity onPress={loadCharacterList}>
                 <Text style={styles.refreshText}>🔄</Text>
               </TouchableOpacity>
             )}
@@ -98,22 +102,22 @@ export default function HomeScreen({ navigation }) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chipsScroll}
           >
-            {pokemonList.map((p) => {
-              const isSelected = pokemon?.id === p.id;
+            {characterList.map((item) => {
+              const isSelected = character?.id === item.id || character?.nombre === item.nombre;
               return (
                 <TouchableOpacity
-                  key={`poke-${p.id}`}
+                  key={`anime-${item.id || item.nombre}`}
                   style={[styles.chip, isSelected && styles.activeChip]}
                   onPress={() => {
-                    setName(p.nombre);
-                    selectPokemon(p);
+                    setName(item.nombre);
+                    selectCharacter(item);
                   }}
                   activeOpacity={0.7}
                 >
                   <Text
                     style={[styles.chipText, isSelected && styles.activeChipText]}
                   >
-                    #{p.id} {p.nombre.toUpperCase()}
+                    {item.nombre}
                   </Text>
                 </TouchableOpacity>
               );
@@ -128,29 +132,29 @@ export default function HomeScreen({ navigation }) {
         {loading && (
           <ActivityIndicator
             size="large"
-            color="#ff7a21"
+            color="#f97316"
             style={styles.loading}
           />
         )}
 
-        {/* IMÁGENES Y DATOS DEL POKÉMON SELECCIONADO */}
-        {pokemon && !loading && (
+        {/* IMÁGENES Y DATOS DEL PERSONAJE */}
+        {character && !loading && (
           <View style={styles.imagesContainer}>
-            {/* NOMBRE DEL POKÉMON ACTIVO */}
+            {/* NOMBRE DEL PERSONAJE ACTIVO */}
             <View style={styles.currentNameBox}>
               <Text style={styles.currentNameText}>
-                #{pokemon.id} {pokemon.nombre?.toUpperCase()}
+                {character.nombre?.toUpperCase()}
               </Text>
-              <Text style={styles.speciesSubtitle}>
-                Especie: {pokemon.species || "Pokémon"}
+              <Text style={styles.animeSubtitle}>
+                {character.anime || "Anime Oficial"} • {character.rango || "Personaje"}
               </Text>
             </View>
 
             {/* IMAGEN PRINCIPAL */}
             <View style={styles.mainImageBox}>
-              {pokemon.imagen ? (
+              {mainImage ? (
                 <Image
-                  source={{ uri: pokemon.imagen }}
+                  source={{ uri: mainImage }}
                   style={styles.mainImage}
                   resizeMode="contain"
                 />
@@ -162,9 +166,9 @@ export default function HomeScreen({ navigation }) {
             {/* DOS MINIATURAS ADICIONALES */}
             <View style={styles.smallImagesContainer}>
               <View style={styles.smallImageBox}>
-                {pokemon.imagen ? (
+                {secondImage ? (
                   <Image
-                    source={{ uri: pokemon.imagen }}
+                    source={{ uri: secondImage }}
                     style={styles.smallImage}
                     resizeMode="contain"
                   />
@@ -172,9 +176,9 @@ export default function HomeScreen({ navigation }) {
               </View>
 
               <View style={styles.smallImageBox}>
-                {pokemon.imagen ? (
+                {thirdImage ? (
                   <Image
-                    source={{ uri: pokemon.imagen }}
+                    source={{ uri: thirdImage }}
                     style={styles.smallImage}
                     resizeMode="contain"
                   />
@@ -185,11 +189,11 @@ export default function HomeScreen({ navigation }) {
             {/* BOTÓN VER DATOS */}
             <TouchableOpacity
               style={styles.detailsButton}
-              onPress={() => navigation.navigate("Details")}
+              onPress={() => navigation.navigate("NarutoDetails")}
               activeOpacity={0.8}
             >
               <Text style={styles.detailsButtonText}>
-                VER DATOS EN BD RELACIONAL
+                VER DATOS EN BD NO RELACIONAL
               </Text>
             </TouchableOpacity>
           </View>
@@ -200,11 +204,11 @@ export default function HomeScreen({ navigation }) {
       <ApiConfigModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        onUpdated={loadPokemonList}
+        onUpdated={loadCharacterList}
       />
 
       {/* BARRA INFERIOR DE PESTAÑAS */}
-      <BottomThumbBar navigation={navigation} activeRoute="Home" />
+      <BottomThumbBar navigation={navigation} activeRoute="NarutoHome" />
     </View>
   );
 }
@@ -212,7 +216,7 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffff",
   },
   scrollContent: {
     padding: 18,
@@ -230,10 +234,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: "bold",
-    color: "#111",
+    color: "#111827",
   },
   badgeBox: {
-    backgroundColor: "#e0e7ff",
+    backgroundColor: "#d1fae5",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -242,7 +246,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 11,
-    color: "#3730a3",
+    color: "#065f46",
     fontWeight: "700",
   },
   configButton: {
@@ -264,16 +268,16 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     borderWidth: 2,
-    borderColor: "#111",
+    borderColor: "#ea580c",
     paddingHorizontal: 15,
     fontSize: 15,
-    color: "#111",
+    color: "#111827",
     borderRadius: 4,
   },
   searchButton: {
     width: 90,
     height: 48,
-    backgroundColor: "#111827",
+    backgroundColor: "#ea580c",
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 8,
@@ -281,7 +285,7 @@ const styles = StyleSheet.create({
   },
   searchButtonText: {
     fontWeight: "bold",
-    color: "#f7f1f1",
+    color: "#ffffff",
   },
   chipsSection: {
     marginBottom: 16,
@@ -313,8 +317,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   activeChip: {
-    backgroundColor: "#111827",
-    borderColor: "#111827",
+    backgroundColor: "#ea580c",
+    borderColor: "#ea580c",
   },
   chipText: {
     fontSize: 12,
@@ -346,20 +350,19 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#1f2937",
   },
-  speciesSubtitle: {
+  animeSubtitle: {
     fontSize: 13,
     color: "#6b7280",
-    textTransform: "capitalize",
   },
   mainImageBox: {
     width: "100%",
-    height: 210,
+    height: 220,
     borderWidth: 2,
-    borderColor: "#111",
+    borderColor: "#ea580c",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
-    backgroundColor: "#fafafa",
+    backgroundColor: "#fff7ed",
   },
   mainImage: {
     width: "82%",
@@ -378,10 +381,10 @@ const styles = StyleSheet.create({
     width: "48%",
     height: 110,
     borderWidth: 2,
-    borderColor: "#111",
+    borderColor: "#ea580c",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fafafa",
+    backgroundColor: "#fff7ed",
   },
   smallImage: {
     width: "75%",
@@ -390,7 +393,7 @@ const styles = StyleSheet.create({
   detailsButton: {
     width: "100%",
     height: 52,
-    backgroundColor: "#111827",
+    backgroundColor: "#ea580c",
     justifyContent: "center",
     alignItems: "center",
     marginTop: 4,
@@ -400,6 +403,6 @@ const styles = StyleSheet.create({
   detailsButtonText: {
     fontSize: 15,
     fontWeight: "bold",
-    color: "#f1ebeb",
+    color: "#ffffff",
   },
 });

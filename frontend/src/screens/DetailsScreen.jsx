@@ -6,9 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Image,
 } from "react-native";
 
 import { usePokemon } from "../context/PokemonContext";
+import BottomThumbBar from "../components/BottomThumbBar";
 
 export default function DetailsScreen({ navigation }) {
   const { pokemon } = usePokemon();
@@ -16,384 +18,418 @@ export default function DetailsScreen({ navigation }) {
   // Si no hay Pokémon seleccionado
   if (!pokemon) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>
-          Primero busca un Pokémon
-        </Text>
-
-        <TouchableOpacity
-          style={styles.homeButton}
-          onPress={() => navigation.navigate("Home")}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.homeButtonText}>
-            ← VOLVER A HOME
+      <View style={styles.container}>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>⚡</Text>
+          <Text style={styles.emptyText}>
+            Selecciona o busca un Pokémon en la pestaña 1
           </Text>
-        </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.homeButton}
+            onPress={() => navigation.navigate("Home")}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.homeButtonText}>← VOLVER A POKÉ FOTOS</Text>
+          </TouchableOpacity>
+        </View>
+
+        <BottomThumbBar navigation={navigation} activeRoute="Details" />
       </View>
     );
   }
 
   // Detectar los movimientos
-  const movimientos =
-    pokemon.movimientos ||
-    pokemon.moves ||
-    [];
+  const rawMoves = pokemon.movimientos || pokemon.moves || [];
+  let movimientos = [];
+  if (typeof rawMoves === "string") {
+    try {
+      movimientos = JSON.parse(rawMoves);
+    } catch {
+      movimientos = [];
+    }
+  } else if (Array.isArray(rawMoves)) {
+    movimientos = rawMoves;
+  }
+
+  // Detectar tipos
+  const rawTipos = pokemon.tipos || [];
+  let tipos = [];
+  if (typeof rawTipos === "string") {
+    try {
+      tipos = JSON.parse(rawTipos);
+    } catch {
+      tipos = [];
+    }
+  } else if (Array.isArray(rawTipos)) {
+    tipos = rawTipos;
+  }
+
+  // Detectar habilidades
+  const rawAbil = pokemon.habilidades || [];
+  let habilidades = [];
+  if (typeof rawAbil === "string") {
+    try {
+      habilidades = JSON.parse(rawAbil);
+    } catch {
+      habilidades = [];
+    }
+  } else if (Array.isArray(rawAbil)) {
+    habilidades = rawAbil;
+  }
+
+  // Detectar stats
+  const rawStats = pokemon.stats || [];
+  let stats = [];
+  if (typeof rawStats === "string") {
+    try {
+      stats = JSON.parse(rawStats);
+    } catch {
+      stats = [];
+    }
+  } else if (Array.isArray(rawStats)) {
+    stats = rawStats;
+  }
 
   return (
     <View style={styles.container}>
-
       {/* CONTENIDO DESPLAZABLE */}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
-        persistentScrollbar={true}
       >
-
         <View style={styles.card}>
+          {/* HEADER DEL POKÉMON */}
+          {pokemon.imagen ? (
+            <Image
+              source={{ uri: pokemon.imagen }}
+              style={styles.avatar}
+              resizeMode="contain"
+            />
+          ) : null}
 
-          {/* NOMBRE */}
           <Text style={styles.title}>
-            {pokemon.nombre ||
-              pokemon.name ||
-              "POKÉMON"}
+            #{pokemon.id} {(pokemon.nombre || pokemon.name || "POKÉMON").toUpperCase()}
           </Text>
-
-          {/* INFORMACIÓN */}
-          <View style={styles.infoContainer}>
-
-            <View style={styles.infoBox}>
-              <Text style={styles.label}>
-                ALTURA
-              </Text>
-
-              <Text style={styles.value}>
-                {pokemon.altura ??
-                  pokemon.height ??
-                  "No disponible"}
-              </Text>
-            </View>
-
-            <View style={styles.infoBox}>
-              <Text style={styles.label}>
-                PESO
-              </Text>
-
-              <Text style={styles.value}>
-                {pokemon.peso ??
-                  pokemon.weight ??
-                  "No disponible"}
-              </Text>
-            </View>
-
-            <View style={styles.infoBox}>
-              <Text style={styles.label}>
-                ESPECIE
-              </Text>
-
-              <Text style={styles.value}>
-                {pokemon.species ||
-                  "No disponible"}
-              </Text>
-            </View>
-
+          <Text style={styles.species}>
+            Especie: {pokemon.species || "Pokémon oficial"}
+          </Text>
+          <View style={styles.badgeRelational}>
+            <Text style={styles.badgeRelationalText}>💾 Almacenado en BD Relacional</Text>
           </View>
 
-          {/* MOVIMIENTOS */}
-          <Text style={styles.sectionTitle}>
-            MOVIMIENTOS
-          </Text>
+          {/* TIPOS */}
+          {tipos.length > 0 && (
+            <View style={styles.typesRow}>
+              {tipos.map((t, idx) => (
+                <View key={`type-${idx}`} style={styles.typeBadge}>
+                  <Text style={styles.typeText}>{String(t).toUpperCase()}</Text>
+                </View>
+              ))}
+            </View>
+          )}
 
-          {movimientos.length > 0 ? (
+          {/* INFORMACIÓN DE ALTURA Y PESO */}
+          <View style={styles.infoContainer}>
+            <View style={styles.infoBox}>
+              <Text style={styles.label}>ALTURA</Text>
+              <Text style={styles.value}>
+                {pokemon.altura !== undefined ? `${pokemon.altura / 10} m` : "N/A"}
+              </Text>
+            </View>
 
-            <View style={styles.movesContainer}>
+            <View style={styles.infoBox}>
+              <Text style={styles.label}>PESO</Text>
+              <Text style={styles.value}>
+                {pokemon.peso !== undefined ? `${pokemon.peso / 10} kg` : "N/A"}
+              </Text>
+            </View>
+          </View>
 
-              {movimientos.map((move, index) => {
+          {/* HABILIDADES */}
+          {habilidades.length > 0 && (
+            <View style={styles.sectionBox}>
+              <Text style={styles.sectionTitle}>HABILIDADES</Text>
+              <View style={styles.tagsContainer}>
+                {habilidades.map((h, idx) => (
+                  <View key={`hab-${idx}`} style={styles.tagAbility}>
+                    <Text style={styles.tagAbilityText}>{String(h).toUpperCase()}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
 
-                const moveName =
-                  typeof move === "string"
-                    ? move
-                    : move?.name ||
-                      move?.nombre ||
-                      move?.move?.name ||
-                      move?.move?.nombre ||
-                      "Movimiento";
-
+          {/* ESTADÍSTICAS BASE */}
+          {stats.length > 0 && (
+            <View style={styles.sectionBox}>
+              <Text style={styles.sectionTitle}>ESTADÍSTICAS BASE</Text>
+              {stats.map((s, idx) => {
+                const statVal = typeof s === "object" ? s.valor : s;
+                const statName = typeof s === "object" ? s.nombre : `Stat ${idx + 1}`;
+                const pct = Math.min(100, Math.round((Number(statVal) / 160) * 100));
                 return (
-                  <View
-                    key={`${moveName}-${index}`}
-                    style={styles.moveBox}
-                  >
-                    <Text
-                      style={styles.move}
-                      numberOfLines={2}
-                    >
-                      {moveName}
-                    </Text>
+                  <View key={`stat-${idx}`} style={styles.statRow}>
+                    <Text style={styles.statName}>{statName.toUpperCase()}</Text>
+                    <View style={styles.statBarBg}>
+                      <View style={[styles.statBarFill, { width: `${pct}%` }]} />
+                    </View>
+                    <Text style={styles.statVal}>{statVal}</Text>
                   </View>
                 );
               })}
-
             </View>
-
-          ) : (
-
-            <View style={styles.noMoves}>
-              <Text style={styles.noMovesText}>
-                No hay movimientos disponibles
-              </Text>
-            </View>
-
           )}
 
-        </View>
+          {/* MOVIMIENTOS */}
+          <View style={styles.sectionBox}>
+            <Text style={styles.sectionTitle}>
+              MOVIMIENTOS ({movimientos.length})
+            </Text>
 
+            {movimientos.length > 0 ? (
+              <View style={styles.movesGrid}>
+                {movimientos.map((item, index) => (
+                  <View key={index} style={styles.moveItem}>
+                    <Text style={styles.moveText}>
+                      • {typeof item === "string" ? item.toUpperCase() : item?.name?.toUpperCase()}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noMoves}>
+                No hay movimientos registrados
+              </Text>
+            )}
+          </View>
+
+          {/* BOTÓN REGRESAR */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.navigate("Home")}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.backButtonText}>← VOLVER A POKÉ FOTOS</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
-      {/* BOTÓN FIJO ARRIBA */}
-      <View style={styles.buttonContainer}>
-
-        <TouchableOpacity
-          style={styles.homeButton}
-          onPress={() => navigation.navigate("Home")}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.homeButtonText}>
-            ← VOLVER A HOME
-          </Text>
-        </TouchableOpacity>
-
-      </View>
-
+      {/* BARRA INFERIOR */}
+      <BottomThumbBar navigation={navigation} activeRoute="Details" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-
-  /* CONTENEDOR PRINCIPAL */
   container: {
     flex: 1,
-    position: "relative",
-    backgroundColor: "#f4f6f8",
+    backgroundColor: "#ffffff",
   },
-
-  /* SCROLL */
   scroll: {
     flex: 1,
-
-    ...(Platform.OS === "web"
-      ? {
-          overflowY: "scroll",
-        }
-      : {}),
   },
-
   scrollContent: {
-    padding: 15,
-    paddingTop: 85,
-    paddingBottom: 30,
+    padding: 16,
+    paddingBottom: 25,
   },
-
-  /* TARJETA */
-  card: {
-    width: "100%",
-    alignSelf: "center",
-
-    backgroundColor: "#ffffff",
-
-    borderWidth: 1,
-    borderColor: "#d9dee5",
-
-    borderRadius: 16,
-
-    padding: 20,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 25,
   },
-
-  /* NOMBRE */
-  title: {
-    fontSize: 28,
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: 17,
     fontWeight: "bold",
-
     textAlign: "center",
-
-    marginBottom: 25,
-
+    marginBottom: 20,
+    color: "#374151",
+  },
+  homeButton: {
+    backgroundColor: "#111827",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  homeButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  card: {
+    borderWidth: 2,
+    borderColor: "#111",
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: "#fff",
+  },
+  avatar: {
+    width: 140,
+    height: 140,
+    alignSelf: "center",
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
     color: "#111827",
   },
-
-  /* INFORMACIÓN */
+  species: {
+    fontSize: 13,
+    color: "#6b7280",
+    textAlign: "center",
+    marginBottom: 4,
+    textTransform: "capitalize",
+  },
+  badgeRelational: {
+    backgroundColor: "#e0e7ff",
+    alignSelf: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginBottom: 14,
+  },
+  badgeRelationalText: {
+    fontSize: 11,
+    color: "#3730a3",
+    fontWeight: "700",
+  },
+  typesRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  typeBadge: {
+    backgroundColor: "#ff7a21",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 14,
+    marginHorizontal: 4,
+  },
+  typeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
   infoContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    flexWrap: "wrap",
-    gap: 10,
+    marginBottom: 16,
   },
-
   infoBox: {
     flex: 1,
-    minWidth: 100,
-
-    backgroundColor: "#f8fafc",
-
-    borderRadius: 10,
-
-    padding: 12,
-
+    borderWidth: 1.5,
+    borderColor: "#111",
+    padding: 10,
+    marginHorizontal: 4,
     alignItems: "center",
+    borderRadius: 6,
+    backgroundColor: "#f9fafb",
   },
-
   label: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "bold",
-
     color: "#6b7280",
-
-    marginBottom: 5,
   },
-
   value: {
-    fontSize: 15,
-    fontWeight: "600",
-
-    color: "#111827",
-
-    textAlign: "center",
-  },
-
-  /* TÍTULO MOVIMIENTOS */
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-
-    marginTop: 30,
-    marginBottom: 15,
-
-    color: "#111827",
-  },
-
-  /* MOVIMIENTOS */
-  movesContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-
-    justifyContent: "flex-start",
-
-    gap: 8,
-
-    width: "100%",
-  },
-
-  /* 8 POR FILA */
-  moveBox: {
-    width: "11.8%",
-
-    minHeight: 42,
-
-    backgroundColor: "#eef2f7",
-
-    borderRadius: 8,
-
-    justifyContent: "center",
-    alignItems: "center",
-
-    paddingHorizontal: 4,
-    paddingVertical: 6,
-  },
-
-  move: {
-    fontSize: 11,
-    fontWeight: "600",
-
-    color: "#374151",
-
-    textAlign: "center",
-  },
-
-  /* SIN MOVIMIENTOS */
-  noMoves: {
-    width: "100%",
-
-    padding: 20,
-
-    borderRadius: 10,
-
-    backgroundColor: "#f8fafc",
-
-    alignItems: "center",
-  },
-
-  noMovesText: {
-    fontSize: 14,
-    color: "#6b7280",
-  },
-
-  /* BOTÓN FIJO ARRIBA */
-  buttonContainer: {
-    position: "absolute",
-
-    top: 0,
-    left: 0,
-    right: 0,
-
-    height: 70,
-
-    backgroundColor: "#f4f6f8",
-
-    paddingHorizontal: 15,
-    paddingVertical: 9,
-
-    justifyContent: "center",
-    alignItems: "center",
-
-    borderBottomWidth: 1,
-    borderBottomColor: "#d9dee5",
-
-    zIndex: 10,
-    elevation: 10,
-  },
-
-  /* BOTÓN HOME */
-  homeButton: {
-    width: "100%",
-    maxWidth: 500,
-
-    height: 52,
-
-    borderRadius: 12,
-
-    backgroundColor: "#111827",
-
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  homeButtonText: {
-    color: "#ffffff",
-
     fontSize: 16,
     fontWeight: "bold",
+    color: "#111827",
+    marginTop: 4,
   },
-
-  /* SIN POKÉMON */
-  emptyContainer: {
-    flex: 1,
-
-    justifyContent: "center",
-    alignItems: "center",
-
-    padding: 20,
-
-    backgroundColor: "#f4f6f8",
+  sectionBox: {
+    marginTop: 10,
+    borderTopWidth: 1.5,
+    borderTopColor: "#e5e7eb",
+    paddingTop: 12,
   },
-
-  emptyText: {
-    fontSize: 18,
-
-    marginBottom: 20,
-
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 8,
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  tagAbility: {
+    backgroundColor: "#e5e7eb",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginRight: 6,
+    marginBottom: 6,
+  },
+  tagAbilityText: {
+    fontSize: 11,
+    fontWeight: "600",
     color: "#374151",
   },
-
+  statRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 3,
+  },
+  statName: {
+    width: 90,
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#4b5563",
+  },
+  statBarBg: {
+    flex: 1,
+    height: 8,
+    backgroundColor: "#e5e7eb",
+    borderRadius: 4,
+    marginHorizontal: 8,
+    overflow: "hidden",
+  },
+  statBarFill: {
+    height: "100%",
+    backgroundColor: "#10b981",
+  },
+  statVal: {
+    width: 32,
+    fontSize: 11,
+    fontWeight: "bold",
+    textAlign: "right",
+    color: "#111827",
+  },
+  movesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  moveItem: {
+    width: "50%",
+    paddingVertical: 3,
+  },
+  moveText: {
+    fontSize: 12,
+    color: "#374151",
+  },
+  noMoves: {
+    fontSize: 13,
+    color: "#888",
+    fontStyle: "italic",
+  },
+  backButton: {
+    backgroundColor: "#111827",
+    paddingVertical: 12,
+    borderRadius: 6,
+    alignItems: "center",
+    marginTop: 18,
+  },
+  backButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
 });
