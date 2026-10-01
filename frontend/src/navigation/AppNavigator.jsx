@@ -1,40 +1,38 @@
-import React from "react";
-import { createStackNavigator } from "expo-router/js-stack";
+import React, { useState } from "react";
+import { View, StyleSheet } from "react-native";
 
 import HomeScreen from "../screens/HomeScreen";
 import DetailsScreen from "../screens/DetailsScreen";
 import NarutoHomeScreen from "../screens/NarutoHomeScreen";
 import NarutoDetailsScreen from "../screens/NarutoDetailsScreen";
 
-const Stack = createStackNavigator();
-
 export default function AppNavigator() {
+  const [currentRoute, setCurrentRoute] = useState("Home");
+
+  const navigation = {
+    navigate: (routeName) => {
+      if (routeName) {
+        setCurrentRoute(routeName);
+      }
+    },
+    goBack: () => {
+      setCurrentRoute("Home");
+    },
+  };
+
   return (
-    <Stack.Navigator
-      initialRouteName="Home"
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Stack.Screen
-        name="Home"
-        component={HomeScreen}
-      />
-
-      <Stack.Screen
-        name="Details"
-        component={DetailsScreen}
-      />
-
-      <Stack.Screen
-        name="NarutoHome"
-        component={NarutoHomeScreen}
-      />
-
-      <Stack.Screen
-        name="NarutoDetails"
-        component={NarutoDetailsScreen}
-      />
-    </Stack.Navigator>
+    <View style={styles.container}>
+      {currentRoute === "Home" && <HomeScreen navigation={navigation} />}
+      {currentRoute === "Details" && <DetailsScreen navigation={navigation} />}
+      {currentRoute === "NarutoHome" && <NarutoHomeScreen navigation={navigation} />}
+      {currentRoute === "NarutoDetails" && <NarutoDetailsScreen navigation={navigation} />}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+  },
+});
