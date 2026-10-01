@@ -274,6 +274,21 @@ function setupSwagger(app) {
     swaggerUi.serve,
     swaggerUi.setup(swaggerDocument, {
       customSiteTitle: "Pokémon API - Swagger UI",
+      customJsStr: `
+        document.documentElement.setAttribute('translate', 'no');
+        document.documentElement.classList.add('notranslate');
+        if (document.body) document.body.classList.add('notranslate');
+        const meta = document.createElement('meta');
+        meta.name = 'google';
+        meta.content = 'notranslate';
+        document.head.appendChild(meta);
+      `,
+      customCss: `
+        .opblock-summary-method, .opblock-summary-path {
+          font-family: monospace !important;
+          font-weight: 700 !important;
+        }
+      `,
       swaggerOptions: {
         docExpansion: "list",
         filter: true,
