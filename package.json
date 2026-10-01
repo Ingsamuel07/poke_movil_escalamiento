@@ -6,7 +6,7 @@
   "main": "backend/src/app.js",
   "scripts": {
     "start": "node backend/src/app.js",
-    "build": "cd frontend && npm install && npx expo export -p web"
+    "build": "cd frontend && npm install && npx expo export -p web && cp -r dist ../dist"
   },
   "dependencies": {
     "cors": "^2.8.6",
