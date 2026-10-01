@@ -17,13 +17,15 @@ const getDefaultHost = () => {
   return hostUri ? hostUri.split(":")[0] : "localhost";
 };
 
-// URL oficial desplegada en Render para Pokémon
+const DEFAULT_HOST = getDefaultHost();
+
+// URLs oficiales desplegadas en Render
 const DEPLOYED_POKEMON_URL = "https://poke-movil-escalamiento.onrender.com/api";
 const DEPLOYED_ANIME_URL = "https://anime-backend-python.onrender.com/api";
 
 let config = {
   pokemonApiUrl: DEPLOYED_POKEMON_URL,
-  animeApiUrl: `http://${DEFAULT_HOST}:8000/api`,
+  animeApiUrl: Platform.OS === "web" ? DEPLOYED_ANIME_URL : `http://${DEFAULT_HOST}:8000/api`,
 };
 
 /**
