@@ -3,8 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "description": "Monorepo con microservicio Node.js relacional, microservicio Python no relacional y app movil",
+  "main": "backend/src/app.js",
   "scripts": {
-    "start": "cd backend && npm start",
-    "build": "cd backend && npm install"
+    "start": "node backend/src/app.js",
+    "build": "cd backend && npm install",
+    "postinstall": "cd backend && npm install"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1",
+    "mysql2": "^3.24.4",
+    "pg": "^8.23.1",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1"
   }
 }

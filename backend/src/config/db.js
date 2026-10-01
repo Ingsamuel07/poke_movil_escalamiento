@@ -1,4 +1,8 @@
-require("dotenv").config();
+try {
+  require("dotenv").config();
+} catch (e) {
+  // En producción (Render / Railway), las variables de entorno son inyectadas por el sistema
+}
 const { SEED_POKEMONS } = require("../services/pokemonSeedData");
 
 let pool = null;
