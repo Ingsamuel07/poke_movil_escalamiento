@@ -17,12 +17,12 @@ const getDefaultHost = () => {
   return hostUri ? hostUri.split(":")[0] : "localhost";
 };
 
-const DEFAULT_HOST = getDefaultHost();
+// URL oficial desplegada en Render para Pokémon
+const DEPLOYED_POKEMON_URL = "https://poke-movil-escalamiento.onrender.com/api";
+const DEPLOYED_ANIME_URL = "https://anime-backend-python.onrender.com/api";
 
-// URLs base iniciales (Node.js en puerto 3000, Python FastAPI en puerto 8000)
-// Pueden reemplazarse con las URLs de Render / Railway en producción
 let config = {
-  pokemonApiUrl: `http://${DEFAULT_HOST}:3000/api`,
+  pokemonApiUrl: DEPLOYED_POKEMON_URL,
   animeApiUrl: `http://${DEFAULT_HOST}:8000/api`,
 };
 
