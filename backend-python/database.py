@@ -49,9 +49,9 @@ def seed_database() -> Dict[str, Any]:
     if is_connected_to_mongo and collection is not None:
         try:
             for char in SEED_ANIME_CHARACTERS:
-                collection.update_one(
+                collection.replace_one(
                     {"id": char["id"]},
-                    {"$set": char},
+                    char,
                     upsert=True
                 )
             return {
