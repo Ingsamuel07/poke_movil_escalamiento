@@ -1,0 +1,10 @@
+{
+  "name": "poke_movil_escalamiento",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo con microservicio Node.js relacional, microservicio Python no relacional y app movil",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "build": "cd backend && npm install"
+  }
+}
