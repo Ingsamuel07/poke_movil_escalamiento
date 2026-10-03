@@ -22,16 +22,19 @@ const IS_LOCAL_WEB =
   Platform.OS === "web" &&
   typeof window !== "undefined" &&
   ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const IS_LOCAL_NATIVE = __DEV__ && Platform.OS !== "web";
 
 // URLs oficiales desplegadas en Render
 const DEPLOYED_POKEMON_URL = "https://poke-movil-escalamiento.onrender.com/api";
 const DEPLOYED_ANIME_URL = "https://anime-backend-python.onrender.com/api";
-const DEPLOYED_DOCENTES_URL = "https://docentes-backend-nodejs.onrender.com/api";
+const DEPLOYED_DOCENTES_URL =
+  "https://poke-movil-escalonamiento-docentes.onrender.com/api";
 
 let config = {
   pokemonApiUrl: DEPLOYED_POKEMON_URL,
   animeApiUrl: Platform.OS === "web" ? DEPLOYED_ANIME_URL : `http://${DEFAULT_HOST}:8000/api`,
-  docentesApiUrl: Platform.OS === "web" ? DEPLOYED_DOCENTES_URL : `http://${DEFAULT_HOST}:4000/api`,
+  docentesApiUrl:
+    IS_LOCAL_NATIVE ? `http://${DEFAULT_HOST}:4000/api` : DEPLOYED_DOCENTES_URL,
 };
 
 /**
@@ -213,7 +216,9 @@ export const seedAnime = async () => {
 const requestDocentes = async (path, options = {}) => {
   const localUrl = `http://${DEFAULT_HOST}:4000/api`;
   const urls = [
-    ...(IS_LOCAL_WEB ? [localUrl, config.docentesApiUrl] : [config.docentesApiUrl, localUrl]),
+    ...(IS_LOCAL_WEB || IS_LOCAL_NATIVE
+      ? [localUrl, config.docentesApiUrl]
+      : [config.docentesApiUrl, localUrl]),
   ].filter((url, index, all) => all.indexOf(url) === index);
   let lastError;
 
