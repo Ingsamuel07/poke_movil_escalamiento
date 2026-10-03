@@ -8,13 +8,9 @@ import AppNavigator from "./navigation/AppNavigator";
 export default function App() {
   return (
     <PokemonProvider>
-
       <NavigationContainer>
-
         <AppNavigator />
-
       </NavigationContainer>
-
     </PokemonProvider>
   );
 }
