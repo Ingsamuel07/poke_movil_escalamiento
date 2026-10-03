@@ -25,6 +25,18 @@ services:
       - key: DB_NAME
         value: anime_db
 
+  - type: web
+    name: docentes-backend-nodejs
+    env: node
+    rootDir: backend-docentes
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+
   - type: static
     name: poke-movil-frontend
     rootDir: frontend

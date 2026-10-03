@@ -1,34 +1,33 @@
 # 🚀 GUÍA COMPLETA DE DESPLIEGUE EN LA NUBE Y ARQUITECTURA
 
-Este proyecto implementa una arquitectura distribuida compuesta por dos microservicios independientes con sus propias bases de datos en la nube y una aplicación móvil Expo / React Native que los consume.
+Este proyecto implementa una arquitectura distribuida de microservicios independientes con sus propias bases de datos en la nube y una aplicación móvil Expo / React Native de 5 pestañas que los consume.
 
 ---
 
 ## 📐 1. Arquitectura del Sistema
 
 ```
-                    ┌──────────────────────────────────────────┐
-                    │      APLICACIÓN MÓVIL (EXPO / RN)        │
-                    │   Configuración Dinámica de URLs en App  │
-                    └─────────────┬──────────────┬─────────────┘
-                                  │              │
-                   HTTP / REST    │              │ HTTP / REST
-                                  ▼              ▼
-┌───────────────────────────────────────┐  ┌──────────────────────────────────────┐
-│  MICROSERVICIO 1 (NODE.JS / EXPRESS)  │  │   MICROSERVICIO 2 (PYTHON / FASTAPI) │
-│  - Documentación Swagger (/api-docs)  │  │   - Documentación Swagger (/docs)    │
-│  - CRUD & Seed de 10 Pokémon          │  │   - CRUD & Seed de 10 Anime Heroes   │
-│  - Desplegado en Render / Railway     │  │   - Desplegado en Render / Railway   │
-└──────────────────┬────────────────────┘  └──────────────────┬───────────────────┘
-                   │                                          │
-                   │ Conexión Relacional                      │ Conexión NoSQL
-                   ▼                                          ▼
-┌───────────────────────────────────────┐  ┌──────────────────────────────────────┐
-│     BASE DE DATOS RELACIONAL NUBE     │  │    BASE DE DATOS NO RELACIONAL NUBE  │
-│  (Supabase / Neon / Render PostgreSQL │  │          (MongoDB Atlas M0)          │
-│          o Railway MySQL)             │  │                                      │
-│  Almacena los 10 Pokémon Oficiales    │  │   Almacena los 10 Personajes Anime   │
-└───────────────────────────────────────┘  └──────────────────────────────────────┘
+                             ┌──────────────────────────────────────────┐
+                             │      APLICACIÓN MÓVIL (EXPO / RN)        │
+                             │   5 Pestañas de Navegación & Config Modal│
+                             └──────┬──────────────┬──────────────┬─────┘
+                                    │              │              │
+                     HTTP / REST    │  HTTP / REST │  HTTP / REST │ (Path & Query Params)
+                                    ▼              ▼              ▼
+┌───────────────────────────────────────┐  ┌──────────────────────────────────────┐  ┌──────────────────────────────────────┐
+│  MICROSERVICIO 1 (NODE.JS / EXPRESS)  │  │   MICROSERVICIO 2 (PYTHON / FASTAPI) │  │  MICROSERVICIO 3 (NODE.JS AGNÓSTICO) │
+│  - Documentación Swagger (/api-docs)  │  │   - Documentación Swagger (/docs)    │  │  - Documentación Swagger (/api-docs)  │
+│  - CRUD & Seed de 10 Pokémon          │  │   - CRUD & Seed de 10 Anime Heroes   │  │  - Docentes UNINPAHU (FITI)           │
+│  - Desplegado en Render / Railway     │  │   - Desplegado en Render / Railway   │  │  - Path & Query Params (Sin Express)  │
+└──────────────────┬────────────────────┘  └──────────────────┬───────────────────┘  └──────────────────┬───────────────────┘
+                   │                                          │                                         │
+                   │ Conexión Relacional                      │ Conexión NoSQL                          │ Conexión Relacional Nube
+                   ▼                                          ▼                                         ▼
+┌───────────────────────────────────────┐  ┌──────────────────────────────────────┐  ┌──────────────────────────────────────┐
+│     BASE DE DATOS RELACIONAL NUBE     │  │    BASE DE DATOS NO RELACIONAL NUBE  │  │     BASE DE DATOS RELACIONAL NUBE    │
+│            (Neon PostgreSQL)          │  │          (MongoDB Atlas M0)          │  │            (Neon PostgreSQL)         │
+│  Almacena los 10 Pokémon Oficiales    │  │   Almacena los 10 Personajes Anime   │  │  Tabla docentes (Docentes UNINPAHU)  │
+└───────────────────────────────────────┘  └──────────────────────────────────────┘  └──────────────────────────────────────┘
 ```
 
 ---
@@ -108,7 +107,7 @@ Este proyecto implementa una arquitectura distribuida compuesta por dos microser
    - **Build Command**: `npm install`
    - **Start Command**: `npm start`
 5. En **Environment Variables**:
-   - `DATABASE_URL`: *(Tu cadena de Neon/Supabase/Render Postgres)*
+   - `DATABASE_URL`: <configurar-como-secreto-en-Render>
 6. Haz clic en **Create Web Service**.
 7. Tu Swagger estará disponible en:
    ```
@@ -144,7 +143,53 @@ Este proyecto implementa una arquitectura distribuida compuesta por dos microser
 
 ---
 
-## 📱 6. Ejecución y Configuración de la App Móvil (Expo)
+## 🏛️ 6. Despliegue del Microservicio Agnóstico de Docentes (Node.js sin Express)
+
+Este microservicio cumple con el requerimiento de ser **agnóstico de frameworks** (usa el módulo nativo `http` de Node.js, sin Express ni NestJS), gestiona parámetros por ruta (`Path params`) y consulta (`Query params`) sin body, y utiliza una base de datos relacional PostgreSQL o MySQL.
+
+### Ejecución Local:
+```bash
+cd backend-docentes
+npm install
+npm start
+```
+O desde la raíz del proyecto:
+```bash
+npm run start:docentes
+```
+- Servicio corriendo en: `http://localhost:4000`
+- Documentación Swagger interactiva en: `http://localhost:4000/api-docs`
+- Especificación OpenAPI JSON en: `http://localhost:4000/swagger.json`
+- Configura `DATABASE_URL` con una base de datos relacional en la nube antes de iniciar el servicio. La tabla y los datos iniciales se crean automáticamente cuando la tabla está vacía.
+
+### Endpoints Disponibles:
+1. `GET /api/docentes` (Query params opcionales: `?search=jorge&programa=Ingenieria`)
+2. `GET /api/docentes/:id` (Path param: ej. `/api/docentes/1`)
+3. `GET /api/docentes/buscar?q=jimmy` (Query param especializado)
+4. `POST /api/docentes/agregar?nombre=...&cargo=...` (Query Params, sin body)
+5. `POST /api/docentes/seed` (Sin body; sincroniza docentes iniciales)
+6. `GET /health` (Estado de disponibilidad del servicio y base de datos)
+7. `GET /api-docs` (Swagger UI interactivo)
+
+### Despliegue en Render.com:
+1. En [Render.com](https://render.com), haz clic en **New +** -> **Web Service**.
+2. Conecta el repositorio de GitHub.
+3. Completa la configuración:
+   - **Root Directory**: `backend-docentes`
+   - **Environment**: `Node`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+4. En **Environment Variables**:
+   - `DATABASE_URL`: <configurar-como-secreto-en-Render>
+5. Haz clic en **Create Web Service**.
+6. Tu Swagger estará disponible en:
+   ```
+   https://tu-servicio-docentes.onrender.com/api-docs
+   ```
+
+---
+
+## 📱 7. Ejecución y Configuración de la App Móvil (Expo)
 
 ### Ejecución Local:
 ```bash
@@ -155,11 +200,12 @@ npm start
 - O escanea el código QR con **Expo Go** en tu dispositivo Android/iOS.
 
 ### Configuración en Vivo de URLs desde la Aplicación:
-1. En la aplicación móvil, haz clic en el icono de **⚙️ (Configuración)** en la esquina superior derecha de la pantalla de Pokémon o Anime.
-2. Ingresa tus URLs públicas desplegadas en Render:
-   - **Microservicio Pokémon**: `https://tu-servicio-node.onrender.com/api`
-   - **Microservicio Anime**: `https://tu-servicio-python.onrender.com/api`
-3. Presiona **PROBAR CONEXIÓN** para verificar que ambos servicios responden (mostrará puntos verdes 🟢).
-4. Presiona **SEMBRAR 10 + 10 EN NUBE** para asegurar que ambas bases de datos remotas tengan los registros listos.
+1. En la aplicación móvil, haz clic en el icono de **⚙️ (Configuración)** en la esquina superior derecha.
+2. Ingresa tus URLs públicas desplegadas en Render o locales:
+   - **Microservicio Pokémon**: `https://poke-movil-escalamiento.onrender.com/api`
+   - **Microservicio Anime**: `https://anime-backend-python.onrender.com/api`
+   - **Microservicio Docentes**: `https://docentes-backend-nodejs.onrender.com/api` (o `http://localhost:4000/api`)
+3. Presiona **PROBAR CONEXIÓN** para verificar que los tres servicios responden (mostrará puntos verdes 🟢).
+4. Presiona **SINCRONIZAR DATOS INICIALES** para asegurar que los registros remotos estén sincronizados.
 5. Presiona **GUARDAR Y APLICAR**.
-6. ¡Listo! La aplicación móvil consumirá de inmediato tus microservicios y bases de datos en la nube.
+6. Cuando Render termine el despliegue, configura en la app la URL pública del servicio con el sufijo `/api`. La 5ª pestaña inferior permite buscar docentes y consultar sus perfiles completos desde la base de datos.

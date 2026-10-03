@@ -8,7 +8,6 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
-  Alert,
 } from "react-native";
 import {
   getApiUrls,
@@ -17,12 +16,14 @@ import {
   testMicroservicesConnection,
   seedPokemons,
   seedAnime,
+  seedDocentes,
 } from "../services/api";
 
 export default function ApiConfigModal({ visible, onClose, onUpdated }) {
   const currentUrls = getApiUrls();
   const [nodeUrl, setNodeUrl] = useState(currentUrls.pokemonApiUrl);
   const [pythonUrl, setPythonUrl] = useState(currentUrls.animeApiUrl);
+  const [docentesUrl, setDocentesUrl] = useState(currentUrls.docentesApiUrl || "");
   const [testing, setTesting] = useState(false);
   const [testResults, setTestResults] = useState(null);
   const [seeding, setSeeding] = useState(false);
@@ -32,6 +33,7 @@ export default function ApiConfigModal({ visible, onClose, onUpdated }) {
     setCustomApiUrls({
       pokemonUrl: nodeUrl.trim(),
       animeUrl: pythonUrl.trim(),
+      docentesUrl: docentesUrl.trim(),
     });
     setStatusMsg("✅ URLs guardadas correctamente");
     if (onUpdated) onUpdated();
@@ -44,8 +46,9 @@ export default function ApiConfigModal({ visible, onClose, onUpdated }) {
     const def = resetApiUrls();
     setNodeUrl(def.pokemonApiUrl);
     setPythonUrl(def.animeApiUrl);
+    setDocentesUrl(def.docentesApiUrl);
     setTestResults(null);
-    setStatusMsg("Restaurado a valores locales por defecto");
+    setStatusMsg("Restaurado a valores por defecto");
     if (onUpdated) onUpdated();
   };
 
@@ -55,6 +58,7 @@ export default function ApiConfigModal({ visible, onClose, onUpdated }) {
     setCustomApiUrls({
       pokemonUrl: nodeUrl.trim(),
       animeUrl: pythonUrl.trim(),
+      docentesUrl: docentesUrl.trim(),
     });
     const res = await testMicroservicesConnection();
     setTestResults(res);
@@ -65,9 +69,8 @@ export default function ApiConfigModal({ visible, onClose, onUpdated }) {
     setSeeding(true);
     setStatusMsg("Sembrando registros en bases de datos en la nube...");
     try {
-      await seedPokemons().catch((e) => console.warn(e));
-      await seedAnime().catch((e) => console.warn(e));
-      setStatusMsg("✅ Sembrado completado (10 Pokémon en Relacional y 10 Anime en NoSQL)");
+      await Promise.all([seedPokemons(), seedAnime(), seedDocentes()]);
+      setStatusMsg("✅ Datos iniciales sincronizados en los tres microservicios");
       if (onUpdated) onUpdated();
     } catch (e) {
       setStatusMsg(`Aviso: ${e.message}`);
@@ -91,7 +94,7 @@ export default function ApiConfigModal({ visible, onClose, onUpdated }) {
               Configura las URLs públicas desplegadas en Render, Railway o tu red local.
             </Text>
 
-            {/* MICROSERVICIO NODE */}
+            {/* MICROSERVICIO NODE POKEMON */}
             <View style={styles.group}>
               <Text style={styles.label}>
                 1. Microservicio Pokémon (Node.js & BD Relacional):
@@ -106,7 +109,7 @@ export default function ApiConfigModal({ visible, onClose, onUpdated }) {
               <Text style={styles.hint}>Swagger docs en: {nodeUrl.replace(/\/api$/, "")}/api-docs</Text>
             </View>
 
-            {/* MICROSERVICIO PYTHON */}
+            {/* MICROSERVICIO PYTHON ANIME */}
             <View style={styles.group}>
               <Text style={styles.label}>
                 2. Microservicio Anime (Python & BD No Relacional):
@@ -121,17 +124,36 @@ export default function ApiConfigModal({ visible, onClose, onUpdated }) {
               <Text style={styles.hint}>Swagger docs en: {pythonUrl.replace(/\/api$/, "")}/docs</Text>
             </View>
 
+            {/* MICROSERVICIO DOCENTES UNINPAHU */}
+            <View style={styles.group}>
+              <Text style={styles.label}>
+                3. Microservicio Docentes (Node.js Agnóstico & BD Nube):
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={docentesUrl}
+                onChangeText={setDocentesUrl}
+                placeholder="https://tu-servicio-docentes.onrender.com/api"
+                autoCapitalize="none"
+              />
+              <Text style={styles.hint}>Swagger docs en: {docentesUrl.replace(/\/api$/, "")}/api-docs</Text>
+            </View>
+
             {/* RESULTADOS DE PRUEBA */}
             {testResults && (
               <View style={styles.testBox}>
                 <Text style={styles.testTitle}>Resultado de conexión:</Text>
-                <Text style={[styles.testItem, { color: testResults.pokemon.ok ? "#10b981" : "#ef4444" }]}>
-                  {testResults.pokemon.ok ? "🟢" : "🔴"} Node.js (Relacional):{" "}
-                  {testResults.pokemon.ok ? "Conectado OK" : "Sin respuesta"}
+                <Text style={[styles.testItem, { color: testResults.pokemon?.ok ? "#10b981" : "#ef4444" }]}>
+                  {testResults.pokemon?.ok ? "🟢" : "🔴"} Node.js Pokémon:{" "}
+                  {testResults.pokemon?.ok ? "Conectado OK" : "Sin respuesta"}
                 </Text>
-                <Text style={[styles.testItem, { color: testResults.anime.ok ? "#10b981" : "#ef4444" }]}>
-                  {testResults.anime.ok ? "🟢" : "🔴"} Python (No Relacional):{" "}
-                  {testResults.anime.ok ? "Conectado OK" : "Sin respuesta"}
+                <Text style={[styles.testItem, { color: testResults.anime?.ok ? "#10b981" : "#ef4444" }]}>
+                  {testResults.anime?.ok ? "🟢" : "🔴"} Python Anime:{" "}
+                  {testResults.anime?.ok ? "Conectado OK" : "Sin respuesta"}
+                </Text>
+                <Text style={[styles.testItem, { color: testResults.docentes?.ok ? "#10b981" : "#ef4444" }]}>
+                  {testResults.docentes?.ok ? "🟢" : "🔴"} Node.js Docentes (Agnóstico):{" "}
+                  {testResults.docentes?.ok ? "Conectado OK" : "Sin respuesta"}
                 </Text>
               </View>
             )}
@@ -160,7 +182,7 @@ export default function ApiConfigModal({ visible, onClose, onUpdated }) {
                 {seeding ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={styles.btnText}>SEMBRAR 10 + 10 EN NUBE</Text>
+                  <Text style={styles.btnText}>SINCRONIZAR DATOS INICIALES</Text>
                 )}
               </TouchableOpacity>
 

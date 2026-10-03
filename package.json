@@ -6,6 +6,7 @@
   "main": "backend/src/app.js",
   "scripts": {
     "start": "node backend/src/app.js",
+    "start:docentes": "node backend-docentes/server.js",
     "build": "cd frontend && npm install && npx expo export -p web && cp -r dist ../dist"
   },
   "dependencies": {

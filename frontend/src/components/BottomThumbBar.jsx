@@ -3,41 +3,54 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native
 
 export default function BottomThumbBar({ navigation, activeRoute }) {
   const tabs = [
-    {
-      id: "Home",
-      title: "Poké 10",
-      badge: "1",
-      icon: "⚡",
-    },
-    {
-      id: "Details",
-      title: "Poké Datos",
-      badge: "2",
-      icon: "📊",
-    },
-    {
-      id: "NarutoHome",
-      title: "Anime 10",
-      badge: "3",
-      icon: "🍥",
-    },
-    {
-      id: "NarutoDetails",
-      title: "Anime Datos",
-      badge: "4",
-      icon: "📜",
-    },
-  ];
+  {
+    id: "Home",
+    title: "Poké 10",
+    badge: "1",
+    icon: "⚡",
+  },
+  {
+    id: "Details",
+    title: "Poké Datos",
+    badge: "2",
+    icon: "📊",
+  },
+  {
+    id: "NarutoHome",
+    title: "Anime 10",
+    badge: "3",
+    icon: "🍥",
+  },
+  {
+    id: "NarutoDetails",
+    title: "Anime Datos",
+    badge: "4",
+    icon: "📜",
+  },
+  {
+    id: "DatosDocente",
+    title: "Docente",
+    badge: "5",
+    icon: "👨‍🏫",
+  },
+];
 
   return (
     <View style={styles.container}>
       <View style={styles.bar}>
         {tabs.map((tab) => {
-          const isActive = activeRoute === tab.id;
+          const isActive =
+            activeRoute === tab.id ||
+            (tab.id === "DatosDocente" && activeRoute === "DatosDocenteDetalle");
+          const isDocenteTab = tab.id === "DatosDocente";
           return (
             <TouchableOpacity
               key={tab.id}
-              style={[styles.thumbButton, isActive && styles.activeThumbButton]}
+              style={[
+                styles.thumbButton,
+                isActive && styles.activeThumbButton,
+                isActive && isDocenteTab && styles.activeDocenteButton,
+              ]}
               onPress={() => {
                 if (!isActive) {
                   navigation.navigate(tab.id);
@@ -55,7 +68,7 @@ export default function BottomThumbBar({ navigation, activeRoute }) {
               >
                 {tab.title}
               </Text>
-              {isActive && <View style={styles.activeDot} />}
+              {isActive && <View style={[styles.activeDot, isDocenteTab && { backgroundColor: "#ffffff" }]} />}
             </TouchableOpacity>
           );
         })}
@@ -94,6 +107,9 @@ const styles = StyleSheet.create({
   },
   activeThumbButton: {
     backgroundColor: "#111827",
+  },
+  activeDocenteButton: {
+    backgroundColor: "#ea580c",
   },
   icon: {
     fontSize: 16,
