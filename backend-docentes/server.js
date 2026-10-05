@@ -11,6 +11,8 @@ const {
   getAllDocentes,
   getDocenteById,
   addDocente,
+  updateDocente,
+  deleteDocente,
   seedDatabase,
   checkHealth,
   getDbType,
@@ -24,7 +26,7 @@ function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
   });
   res.end(JSON.stringify(data, null, 2));
@@ -108,7 +110,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
     });
     return res.end();
@@ -204,8 +206,50 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 6. CONSULTA POR PATH PARAM (/api/docentes/:id)
+    // 6. ACTUALIZAR DOCENTE POR PATH PARAM Y QUERY PARAMS (PUT /api/docentes/:id?...).
     const matchPathId = pathname.match(/^\/api\/docentes\/(\d+)$/);
+    if (matchPathId && req.method === "PUT") {
+      const id = matchPathId[1];
+      const fields = [
+        "nombre", "cargo", "programa", "facultad", "correo", "telefono",
+        "sede", "imagen", "linkedin", "resumen", "perfil_completo",
+        "formacion", "areas_investigacion", "asignaturas",
+      ];
+      const docenteData = {};
+      for (const field of fields) {
+        if (searchParams.has(field)) docenteData[field] = searchParams.get(field);
+      }
+      if (Object.keys(docenteData).length === 0) {
+        return sendJson(res, 400, { error: "Indique al menos un campo para actualizar." });
+      }
+      if (Object.prototype.hasOwnProperty.call(docenteData, "nombre") && !docenteData.nombre.trim()) {
+        return sendJson(res, 400, { error: "El nombre del docente no puede estar vacío." });
+      }
+      const docente = await updateDocente(id, docenteData);
+      if (!docente) {
+        return sendJson(res, 404, { error: `Docente con ID ${id} no encontrado.` });
+      }
+      return sendJson(res, 200, {
+        mensaje: "Docente actualizado exitosamente.",
+        motor_bd: getDbType(),
+        docente,
+      });
+    }
+
+    // 7. ELIMINAR DOCENTE POR PATH PARAM (DELETE /api/docentes/:id).
+    if (matchPathId && req.method === "DELETE") {
+      const id = matchPathId[1];
+      const deleted = await deleteDocente(id);
+      if (!deleted) {
+        return sendJson(res, 404, { error: `Docente con ID ${id} no encontrado.` });
+      }
+      return sendJson(res, 200, {
+        mensaje: "Docente eliminado exitosamente.",
+        id: Number(id),
+      });
+    }
+
+    // 8. CONSULTA POR PATH PARAM (/api/docentes/:id)
     if (matchPathId && req.method === "GET") {
       const id = matchPathId[1];
       const docente = await getDocenteById(id);
@@ -220,7 +264,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 7. LISTADO GENERAL CON QUERY PARAMS (/api/docentes?search=...&programa=...)
+    // 9. LISTADO GENERAL CON QUERY PARAMS (/api/docentes?search=...&programa=...)
     if (pathname === "/api/docentes") {
       if (req.method === "GET") {
         const search = searchParams.get("search") || "";
@@ -243,6 +287,8 @@ const server = http.createServer(async (req, res) => {
       endpoints_disponibles: [
         "GET /api/docentes (Query params: ?search=...&programa=...)",
         "GET /api/docentes/:id (Path param)",
+        "PUT /api/docentes/:id?nombre=...&cargo=... (Path y query params, sin body)",
+        "DELETE /api/docentes/:id (Path param)",
         "GET /api/docentes/buscar?q=... (Query param)",
         "POST /api/docentes/agregar?nombre=...&cargo=... (Query params, sin body)",
         "POST /api/docentes/seed (Sin body)",

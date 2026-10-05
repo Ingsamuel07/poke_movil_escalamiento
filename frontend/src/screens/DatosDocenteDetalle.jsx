@@ -79,9 +79,6 @@ export default function DatosDocenteDetalle({ navigation, route }) {
           <View style={styles.card}>
             <Text style={styles.name}>{docente.nombre}</Text>
             <Text style={styles.role}>{docente.cargo}</Text>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>UNINPAHU · {docente.facultad}</Text>
-            </View>
 
             <View style={styles.contactSection}>
               <Text style={styles.sectionTitle}>Información de contacto</Text>
@@ -140,8 +137,6 @@ const styles = StyleSheet.create({
   avatar: { alignSelf: "center", backgroundColor: "#e7ebf1", borderRadius: 48, height: 96, marginBottom: 12, width: 96 },
   name: { color: "#111827", fontSize: 24, fontWeight: "800", textAlign: "center" },
   role: { color: "#525d6d", fontSize: 15, lineHeight: 22, marginTop: 6, textAlign: "center" },
-  badge: { alignSelf: "center", backgroundColor: "#fff2e9", borderRadius: 20, marginTop: 14, paddingHorizontal: 12, paddingVertical: 8 },
-  badgeText: { color: "#c2410c", fontSize: 12, fontWeight: "700", textAlign: "center" },
   contactSection: { borderTopColor: "#e6eaf0", borderTopWidth: 1, marginTop: 22, paddingTop: 18 },
   sectionTitle: { color: "#111827", fontSize: 17, fontWeight: "800", marginBottom: 10 },
   infoRow: { marginBottom: 12 },

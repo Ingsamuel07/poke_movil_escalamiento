@@ -1,6 +1,31 @@
 /**
  * Especificación OpenAPI 3.0 para el Microservicio Agnóstico de Docentes UNINPAHU
  */
+const docenteQueryFields = [
+  ["nombre", "Nombre completo", "ELFAR DIDIER MORANTES SANCHEZ"],
+  ["cargo", "Cargo o especialidad", "Profesor Universitario"],
+  ["programa", "Programa académico", "Ingeniería de Software"],
+  ["facultad", "Facultad", "Facultad FITI"],
+  ["correo", "Correo institucional", "docente@uninpahu.edu.co"],
+  ["telefono", "Teléfono", "+57 601 3323500"],
+  ["sede", "Sede", "Bogotá"],
+  ["imagen", "URL de imagen", "https://example.com/docente.jpg"],
+  ["linkedin", "Perfil de LinkedIn", "https://linkedin.com/in/docente"],
+  ["resumen", "Resumen", "Perfil académico breve"],
+  ["perfil_completo", "Perfil completo", "Trayectoria académica y profesional"],
+  ["formacion", "Formación", "Profesional y especialista"],
+  ["areas_investigacion", "Áreas de investigación", "Ingeniería de Software"],
+  ["asignaturas", "Asignaturas", "Bases de Datos"],
+];
+
+const docenteQueryParameters = docenteQueryFields.map(([name, description, example]) => ({
+  name,
+  in: "query",
+  required: false,
+  description,
+  schema: { type: "string", example },
+}));
+
 const swaggerDocument = {
   openapi: "3.0.3",
   info: {
@@ -16,12 +41,8 @@ const swaggerDocument = {
   },
   servers: [
     {
-      url: "https://docentes-backend-nodejs.onrender.com",
-      description: "Servidor de Producción en Render",
-    },
-    {
-      url: "http://localhost:4000",
-      description: "Servidor de Desarrollo Local (Node.js Nativo)",
+      url: "/",
+      description: "Este mismo servicio (Render o desarrollo local)",
     },
   ],
   tags: [
@@ -131,6 +152,71 @@ const swaggerDocument = {
               },
             },
           },
+        },
+      },
+      put: {
+        tags: ["Administración de la base de datos"],
+        summary: "Actualizar docente mediante Path Param y Query Params",
+        description:
+          "Actualiza los datos indicados de un docente. Envíe el ID en la ruta y los campos que desea actualizar como parámetros de consulta; no use body. Debe incluir al menos un campo.",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            description: "Identificador numérico único del docente",
+            schema: { type: "integer", example: 1 },
+          },
+          ...docenteQueryParameters,
+        ],
+        responses: {
+          200: {
+            description: "Docente actualizado correctamente",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    mensaje: { type: "string" },
+                    docente: { $ref: "#/components/schemas/Docente" },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: "No se indicaron campos o los datos no son válidos" },
+          404: { description: "No existe un docente con ese ID" },
+        },
+      },
+      delete: {
+        tags: ["Administración de la base de datos"],
+        summary: "Eliminar docente por ID (Path Param)",
+        description: "Elimina el registro del docente indicado. No requiere body.",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            description: "Identificador numérico único del docente",
+            schema: { type: "integer", example: 1 },
+          },
+        ],
+        responses: {
+          200: {
+            description: "Docente eliminado correctamente",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    mensaje: { type: "string" },
+                    id: { type: "integer", example: 1 },
+                  },
+                },
+              },
+            },
+          },
+          404: { description: "No existe un docente con ese ID" },
         },
       },
     },

@@ -24,17 +24,23 @@ const IS_LOCAL_WEB =
   ["localhost", "127.0.0.1"].includes(window.location.hostname);
 const IS_LOCAL_NATIVE = __DEV__ && Platform.OS !== "web";
 
+const LOCAL_POKEMON_URL = IS_LOCAL_WEB
+  ? "http://localhost:3000/api"
+  : `http://${DEFAULT_HOST}:3000/api`;
+const LOCAL_ANIME_URL = IS_LOCAL_WEB
+  ? "http://localhost:8000/api"
+  : `http://${DEFAULT_HOST}:8000/api`;
+
 // URLs oficiales desplegadas en Render
 const DEPLOYED_POKEMON_URL = "https://poke-movil-escalamiento.onrender.com/api";
 const DEPLOYED_ANIME_URL = "https://anime-backend-python.onrender.com/api";
 const DEPLOYED_DOCENTES_URL =
-  "https://poke-movil-escalonamiento-docentes.onrender.com/api";
+  "https://poke-movil-escalamiento-docente-1.onrender.com/api";
 
 let config = {
-  pokemonApiUrl: DEPLOYED_POKEMON_URL,
-  animeApiUrl: Platform.OS === "web" ? DEPLOYED_ANIME_URL : `http://${DEFAULT_HOST}:8000/api`,
-  docentesApiUrl:
-    IS_LOCAL_NATIVE ? `http://${DEFAULT_HOST}:4000/api` : DEPLOYED_DOCENTES_URL,
+  pokemonApiUrl: IS_LOCAL_WEB || IS_LOCAL_NATIVE ? LOCAL_POKEMON_URL : DEPLOYED_POKEMON_URL,
+  animeApiUrl: IS_LOCAL_WEB || IS_LOCAL_NATIVE ? LOCAL_ANIME_URL : DEPLOYED_ANIME_URL,
+  docentesApiUrl: DEPLOYED_DOCENTES_URL,
 };
 
 /**
@@ -57,9 +63,9 @@ export const getApiUrls = () => ({ ...config });
 
 export const resetApiUrls = () => {
   config = {
-    pokemonApiUrl: `http://${DEFAULT_HOST}:3000/api`,
-    animeApiUrl: `http://${DEFAULT_HOST}:8000/api`,
-    docentesApiUrl: `http://${DEFAULT_HOST}:4000/api`,
+    pokemonApiUrl: IS_LOCAL_WEB || IS_LOCAL_NATIVE ? LOCAL_POKEMON_URL : DEPLOYED_POKEMON_URL,
+    animeApiUrl: IS_LOCAL_WEB || IS_LOCAL_NATIVE ? LOCAL_ANIME_URL : DEPLOYED_ANIME_URL,
+    docentesApiUrl: DEPLOYED_DOCENTES_URL,
   };
   return getApiUrls();
 };
@@ -214,39 +220,29 @@ export const seedAnime = async () => {
  * Consulta el microservicio configurado y, en desarrollo, intenta el servicio local.
  */
 const requestDocentes = async (path, options = {}) => {
-  const localUrl = `http://${DEFAULT_HOST}:4000/api`;
-  const urls = [
-    ...(IS_LOCAL_WEB || IS_LOCAL_NATIVE
-      ? [localUrl, config.docentesApiUrl]
-      : [config.docentesApiUrl, localUrl]),
-  ].filter((url, index, all) => all.indexOf(url) === index);
-  let lastError;
-
-  for (const baseUrl of urls) {
-    let response;
-    try {
-      response = await fetch(`${baseUrl}${path}`, {
-        signal: AbortSignal.timeout(4000),
-        ...options,
-      });
-    } catch (error) {
-      lastError = error;
-      continue;
-    }
-
-    let data;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error("El servicio de docentes devolvió una respuesta no válida.");
-    }
-    if (!response.ok) {
-      throw new Error(data?.error || data?.mensaje || `Error HTTP ${response.status}`);
-    }
-    return data;
+  const configuredUrl = (config.docentesApiUrl || DEPLOYED_DOCENTES_URL).replace(/\/+$/, "");
+  let response;
+  try {
+    response = await fetch(`${configuredUrl}${path}`, {
+      signal: AbortSignal.timeout(15000),
+      ...options,
+    });
+  } catch (error) {
+    throw new Error(
+      `No se pudo conectar con el microservicio de docentes en ${configuredUrl}: ${error.message}`
+    );
   }
 
-  throw new Error(`No fue posible consultar el servicio de docentes: ${lastError?.message || "sin respuesta"}`);
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error("El microservicio de docentes devolvió una respuesta no válida.");
+  }
+  if (!response.ok) {
+    throw new Error(data?.error || data?.mensaje || `Error HTTP ${response.status}`);
+  }
+  return data;
 };
 
 /**
@@ -283,10 +279,33 @@ export const searchDocentes = async (query) => {
 export const addDocente = async (docenteData) => {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(docenteData)) {
-    if (value) params.set(key, String(value));
+    if (value !== undefined && value !== null) params.set(key, String(value));
   }
   const data = await requestDocentes(`/docentes/agregar?${params}`, { method: "POST" });
   return data.docente;
+};
+
+/**
+ * Actualizar datos de un docente por Path Param y Query Params, sin body.
+ */
+export const updateDocente = async (id, docenteData) => {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(docenteData)) {
+    if (value !== undefined && value !== null) params.set(key, String(value));
+  }
+  const query = params.toString();
+  const data = await requestDocentes(
+    `/docentes/${encodeURIComponent(id)}${query ? `?${query}` : ""}`,
+    { method: "PUT" }
+  );
+  return data.docente;
+};
+
+/**
+ * Eliminar un docente por Path Param.
+ */
+export const deleteDocente = async (id) => {
+  return requestDocentes(`/docentes/${encodeURIComponent(id)}`, { method: "DELETE" });
 };
 
 /**
@@ -321,7 +340,7 @@ export const testMicroservicesConnection = async () => {
   }
 
   try {
-    const dRes = await fetch(`${config.docentesApiUrl}/docentes`, { signal: AbortSignal.timeout(4000) });
+    const dRes = await fetch(`${config.docentesApiUrl}/docentes`, { signal: AbortSignal.timeout(10000) });
     results.docentes.ok = dRes.ok;
   } catch (e) {
     results.docentes.error = e.message;

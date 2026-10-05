@@ -15,10 +15,13 @@ Se conecta a una base de datos relacional **MySQL o PostgreSQL** y recibe los da
    - Las consultas y cambios se realizan directamente en la base de datos configurada.
 3. **Parámetros por Ruta (Path Params)**:
    - `GET /api/docentes/:id` (ej. `/api/docentes/1`).
+   - `PUT /api/docentes/:id?campo=valor` para actualizar los campos indicados.
+   - `DELETE /api/docentes/:id` para eliminar un docente.
 4. **Parámetros de Consulta (Query Params)**:
    - `GET /api/docentes?search=...&programa=...`
    - `GET /api/docentes/buscar?q=morantes`
    - `POST /api/docentes/agregar?nombre=...&cargo=...` (sin body)
+   - La actualización usa Query Params en la ruta `PUT /api/docentes/:id?...` (sin body).
    - `POST /api/docentes/seed` (sin body)
 5. **Documentación Swagger Integrada**:
    - Interfaz Swagger UI interactiva servida en `/api-docs`.
@@ -61,6 +64,8 @@ npm start
 | `GET` | `/api/docentes/:id` | Path Param (`/:id`) | Obtiene los detalles completos de un docente por su ID numérico. |
 | `GET` | `/api/docentes/buscar` | Query Param (`?q=...`) | Búsqueda por coincidencia en texto libre. |
 | `POST` | `/api/docentes/agregar?nombre=...&cargo=...` | Query Params; sin body | Registra un docente en la base de datos relacional. |
+| `PUT` | `/api/docentes/:id?nombre=...&cargo=...` | Path y Query Params; sin body | Actualiza únicamente los campos enviados del docente. |
+| `DELETE` | `/api/docentes/:id` | Path Param; sin body | Elimina el docente indicado. |
 | `POST` | `/api/docentes/seed` | Sin body | Sincroniza los docentes iniciales de la Facultad FITI UNINPAHU. |
 | `GET` | `/health` | N/A | Reporta el estado del motor de base de datos relacional. |
 | `GET` | `/api-docs` | N/A | Interfaz Swagger UI interactiva. |

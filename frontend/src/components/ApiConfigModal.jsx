@@ -127,13 +127,13 @@ export default function ApiConfigModal({ visible, onClose, onUpdated }) {
             {/* MICROSERVICIO DOCENTES UNINPAHU */}
             <View style={styles.group}>
               <Text style={styles.label}>
-                3. Microservicio Docentes (Node.js Agnóstico & BD Nube):
+                3. Microservicio Docentes (Render & BD PostgreSQL Nube):
               </Text>
               <TextInput
                 style={styles.input}
                 value={docentesUrl}
                 onChangeText={setDocentesUrl}
-                placeholder="https://tu-servicio-docentes.onrender.com/api"
+                placeholder="https://poke-movil-escalamiento-docente-1.onrender.com/api"
                 autoCapitalize="none"
               />
               <Text style={styles.hint}>Swagger docs en: {docentesUrl.replace(/\/api$/, "")}/api-docs</Text>

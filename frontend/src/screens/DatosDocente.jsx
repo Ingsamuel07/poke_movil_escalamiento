@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
   ActivityIndicator,
   Image,
+  Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,15 +12,38 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
 import BottomThumbBar from "../components/BottomThumbBar";
-import { getDocentesList } from "../services/api";
+import { addDocente, deleteDocente, getDocentesList, updateDocente } from "../services/api";
+
+const docenteFields = [
+  ["nombre", "Nombre completo", false],
+  ["cargo", "Cargo", false],
+  ["programa", "Programa", false],
+  ["facultad", "Facultad", false],
+  ["correo", "Correo", false],
+  ["telefono", "Teléfono", false],
+  ["sede", "Sede", false],
+  ["imagen", "URL de imagen", false],
+  ["linkedin", "LinkedIn", false],
+  ["resumen", "Resumen", true],
+  ["perfil_completo", "Perfil completo", true],
+  ["formacion", "Formación", true],
+  ["areas_investigacion", "Áreas de investigación", true],
+  ["asignaturas", "Asignaturas", true],
+];
+
+const emptyDocente = Object.fromEntries(docenteFields.map(([key]) => [key, ""]));
 
 export default function DatosDocente({ navigation }) {
   const [docentes, setDocentes] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [formVisible, setFormVisible] = useState(false);
+  const [editingDocente, setEditingDocente] = useState(null);
+  const [formData, setFormData] = useState(emptyDocente);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const loadDocentes = async (term) => {
     setLoading(true);
@@ -47,6 +73,62 @@ export default function DatosDocente({ navigation }) {
       active = false;
     };
   }, []);
+
+  const openForm = (docente = null) => {
+    setEditingDocente(docente);
+    setFormData(
+      docente
+        ? Object.fromEntries(docenteFields.map(([key]) => [key, docente[key] || ""]))
+        : { ...emptyDocente }
+    );
+    setFormError("");
+    setFormVisible(true);
+  };
+
+  const saveDocente = async () => {
+    if (!formData.nombre.trim() || !formData.cargo.trim() || !formData.programa.trim() || !formData.facultad.trim()) {
+      setFormError("Completa nombre, cargo, programa y facultad.");
+      return;
+    }
+
+    setSaving(true);
+    setFormError("");
+    try {
+      if (editingDocente) {
+        await updateDocente(editingDocente.id, formData);
+      } else {
+        await addDocente(formData);
+      }
+      setFormVisible(false);
+      await loadDocentes(search);
+    } catch (requestError) {
+      setFormError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeDocente = async (docente) => {
+    setError("");
+    try {
+      await deleteDocente(docente.id);
+      await loadDocentes(search);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+
+  const confirmDelete = (docente) => {
+    const onConfirm = () => removeDocente(docente);
+    if (Platform.OS === "web") {
+      if (window.confirm(`¿Eliminar el registro de ${docente.nombre}?`)) onConfirm();
+      return;
+    }
+    Alert.alert("Eliminar docente", `¿Eliminar el registro de ${docente.nombre}?`, [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Eliminar", style: "destructive", onPress: onConfirm },
+    ]);
+  };
 
   return (
     <View style={styles.container}>
@@ -79,9 +161,18 @@ export default function DatosDocente({ navigation }) {
 
         <View style={styles.sectionHeading}>
           <Text style={styles.sectionTitle}>Equipo docente</Text>
-          <TouchableOpacity onPress={() => loadDocentes(search)} accessibilityRole="button">
-            <Text style={styles.refresh}>Actualizar</Text>
-          </TouchableOpacity>
+          <View style={styles.headingActions}>
+            <TouchableOpacity onPress={() => loadDocentes(search)} accessibilityRole="button">
+              <Text style={styles.refresh}>Actualizar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              style={styles.addButton}
+              onPress={() => openForm()}
+            >
+              <Text style={styles.addButtonText}>+ Agregar</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {loading ? (
@@ -100,31 +191,102 @@ export default function DatosDocente({ navigation }) {
           </View>
         ) : (
           docentes.map((docente) => (
-            <TouchableOpacity
-              key={docente.id}
-              style={styles.teacherCard}
-              activeOpacity={0.8}
-              onPress={() => navigation.navigate("DatosDocenteDetalle", { id: docente.id })}
-              accessibilityRole="button"
-              accessibilityLabel={`Ver perfil de ${docente.nombre}`}
-            >
-              {docente.imagen ? (
-                <Image source={{ uri: docente.imagen }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                  <Text style={styles.avatarInitial}>{docente.nombre?.charAt(0) || "D"}</Text>
+            <View key={docente.id} style={styles.teacherCard}>
+              <TouchableOpacity
+                style={styles.teacherMain}
+                activeOpacity={0.8}
+                onPress={() => navigation.navigate("DatosDocenteDetalle", { id: docente.id })}
+                accessibilityRole="button"
+                accessibilityLabel={`Consultar perfil de ${docente.nombre}`}
+              >
+                {docente.imagen ? (
+                  <Image source={{ uri: docente.imagen }} style={styles.avatar} />
+                ) : (
+                  <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                    <Text style={styles.avatarInitial}>{docente.nombre?.charAt(0) || "D"}</Text>
+                  </View>
+                )}
+                <View style={styles.teacherInfo}>
+                  <Text style={styles.teacherName}>{docente.nombre}</Text>
+                  <Text style={styles.role}>{docente.cargo}</Text>
+                  <Text style={styles.program}>{docente.programa}</Text>
+                  <Text style={styles.more}>Ver perfil completo →</Text>
                 </View>
-              )}
-              <View style={styles.teacherInfo}>
-                <Text style={styles.teacherName}>{docente.nombre}</Text>
-                <Text style={styles.role}>{docente.cargo}</Text>
-                <Text style={styles.program}>{docente.programa}</Text>
-                <Text style={styles.more}>Ver perfil completo →</Text>
+              </TouchableOpacity>
+              <View style={styles.teacherActions}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  style={styles.editButton}
+                  onPress={() => openForm(docente)}
+                >
+                  <Text style={styles.editButtonText}>Editar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  style={styles.deleteButton}
+                  onPress={() => confirmDelete(docente)}
+                >
+                  <Text style={styles.deleteButtonText}>Eliminar</Text>
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+            </View>
           ))
         )}
       </ScrollView>
+
+      <Modal
+        visible={formVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setFormVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>
+              {editingDocente ? "Editar docente" : "Agregar docente"}
+            </Text>
+            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator>
+              {docenteFields.map(([key, label, multiline]) => (
+                <View key={key} style={styles.formField}>
+                  <Text style={styles.formLabel}>{label}</Text>
+                  <TextInput
+                    accessibilityLabel={label}
+                    style={[styles.formInput, multiline && styles.multilineInput]}
+                    value={formData[key]}
+                    onChangeText={(value) => setFormData((current) => ({ ...current, [key]: value }))}
+                    placeholder={label}
+                    placeholderTextColor="#788397"
+                    autoCapitalize={key === "correo" || key === "linkedin" || key === "imagen" ? "none" : "sentences"}
+                    multiline={multiline}
+                    textAlignVertical={multiline ? "top" : "center"}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+            {formError ? <Text style={styles.formError}>{formError}</Text> : null}
+            <View style={styles.formActions}>
+              <TouchableOpacity
+                style={[styles.formActionButton, styles.cancelButton]}
+                onPress={() => setFormVisible(false)}
+                disabled={saving}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.formActionButton, styles.saveButton]}
+                onPress={saveDocente}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Guardar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <BottomThumbBar navigation={navigation} activeRoute="DatosDocente" />
     </View>
@@ -159,7 +321,10 @@ const styles = StyleSheet.create({
   searchButtonText: { color: "#ffffff", fontSize: 14, fontWeight: "700" },
   sectionHeading: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
   sectionTitle: { color: "#111827", fontSize: 18, fontWeight: "800" },
+  headingActions: { alignItems: "center", flexDirection: "row", gap: 14 },
   refresh: { color: "#c2410c", fontSize: 14, fontWeight: "700" },
+  addButton: { backgroundColor: "#ea580c", borderRadius: 9, paddingHorizontal: 12, paddingVertical: 8 },
+  addButtonText: { color: "#ffffff", fontSize: 13, fontWeight: "700" },
   loading: { marginTop: 32 },
   messageCard: { backgroundColor: "#ffffff", borderRadius: 14, padding: 18 },
   errorTitle: { color: "#b42318", fontSize: 16, fontWeight: "800" },
@@ -174,15 +339,14 @@ const styles = StyleSheet.create({
   },
   retryText: { color: "#ffffff", fontWeight: "700" },
   teacherCard: {
-    alignItems: "center",
     backgroundColor: "#ffffff",
     borderColor: "#e6eaf0",
     borderRadius: 16,
     borderWidth: 1,
-    flexDirection: "row",
     marginBottom: 12,
     padding: 14,
   },
+  teacherMain: { alignItems: "center", flexDirection: "row" },
   avatar: { backgroundColor: "#e7ebf1", borderRadius: 30, height: 60, width: 60 },
   avatarPlaceholder: { alignItems: "center", justifyContent: "center" },
   avatarInitial: { color: "#475467", fontSize: 24, fontWeight: "800" },
@@ -191,4 +355,23 @@ const styles = StyleSheet.create({
   role: { color: "#525d6d", fontSize: 13, lineHeight: 18, marginTop: 4 },
   program: { color: "#7a8493", fontSize: 12, marginTop: 5 },
   more: { color: "#c2410c", fontSize: 13, fontWeight: "700", marginTop: 9 },
+  teacherActions: { flexDirection: "row", justifyContent: "flex-end", gap: 9, marginTop: 12 },
+  editButton: { borderColor: "#c2410c", borderRadius: 8, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 7 },
+  editButtonText: { color: "#c2410c", fontSize: 13, fontWeight: "700" },
+  deleteButton: { backgroundColor: "#fff1f0", borderRadius: 8, paddingHorizontal: 13, paddingVertical: 7 },
+  deleteButtonText: { color: "#b42318", fontSize: 13, fontWeight: "700" },
+  modalOverlay: { backgroundColor: "rgba(17,24,39,0.55)", flex: 1, justifyContent: "center", padding: 16 },
+  formCard: { backgroundColor: "#ffffff", borderRadius: 18, maxHeight: "92%", padding: 20 },
+  formTitle: { color: "#111827", fontSize: 22, fontWeight: "800", marginBottom: 15, textAlign: "center" },
+  formField: { marginBottom: 12 },
+  formLabel: { color: "#465163", fontSize: 13, fontWeight: "700", marginBottom: 5 },
+  formInput: { backgroundColor: "#ffffff", borderColor: "#d8dee8", borderRadius: 10, borderWidth: 1, color: "#111827", minHeight: 44, paddingHorizontal: 12 },
+  multilineInput: { minHeight: 82, paddingTop: 10 },
+  formError: { color: "#b42318", fontSize: 13, marginTop: 10 },
+  formActions: { flexDirection: "row", gap: 10, justifyContent: "flex-end", marginTop: 16 },
+  formActionButton: { alignItems: "center", borderRadius: 9, justifyContent: "center", minWidth: 100, paddingHorizontal: 16, paddingVertical: 11 },
+  cancelButton: { backgroundColor: "#f1f3f6" },
+  cancelButtonText: { color: "#465163", fontWeight: "700" },
+  saveButton: { backgroundColor: "#ea580c" },
+  saveButtonText: { color: "#ffffff", fontWeight: "700" },
 });

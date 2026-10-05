@@ -204,7 +204,7 @@ npm start
 2. Ingresa tus URLs públicas desplegadas en Render o locales:
    - **Microservicio Pokémon**: `https://poke-movil-escalamiento.onrender.com/api`
    - **Microservicio Anime**: `https://anime-backend-python.onrender.com/api`
-   - **Microservicio Docentes**: `https://poke-movil-escalonamiento-docentes.onrender.com/api` (o `http://localhost:4000/api` en desarrollo)
+   - **Microservicio Docentes**: `https://poke-movil-escalamiento-docente-1.onrender.com/api` (Desplegado en Render con PostgreSQL)
 3. Presiona **PROBAR CONEXIÓN** para verificar que los tres servicios responden (mostrará puntos verdes 🟢).
 4. Presiona **SINCRONIZAR DATOS INICIALES** para asegurar que los registros remotos estén sincronizados.
 5. Presiona **GUARDAR Y APLICAR**.
