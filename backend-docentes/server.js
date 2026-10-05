@@ -177,26 +177,22 @@ const server = http.createServer(async (req, res) => {
         res.setHeader("Allow", "POST, OPTIONS");
         return sendJson(res, 405, { error: "Use POST y envíe los datos como query params." });
       }
-      const nombre = searchParams.get("nombre");
-      if (!nombre) {
+      const requiredFields = ["nombre", "cargo"];
+      const missingFields = requiredFields.filter((field) => !searchParams.get(field)?.trim());
+      if (missingFields.length > 0) {
         return sendJson(res, 400, {
-          error: "El parámetro de consulta 'nombre' es requerido. Ejemplo: /api/docentes/agregar?nombre=Ing.+Samuel&cargo=Docente+Cloud",
+          error: `Complete los parámetros obligatorios: ${missingFields.join(", ")}.`,
         });
       }
       const nuevoDocente = await addDocente({
-        nombre,
+        nombre: searchParams.get("nombre"),
         cargo: searchParams.get("cargo"),
         programa: searchParams.get("programa"),
         facultad: searchParams.get("facultad"),
         correo: searchParams.get("correo"),
-        telefono: searchParams.get("telefono"),
-        sede: searchParams.get("sede"),
         imagen: searchParams.get("imagen"),
-        resumen: searchParams.get("resumen"),
         perfil_completo: searchParams.get("perfil_completo"),
         formacion: searchParams.get("formacion"),
-        areas_investigacion: searchParams.get("areas_investigacion"),
-        asignaturas: searchParams.get("asignaturas"),
       });
 
       return sendJson(res, 201, {
@@ -211,9 +207,8 @@ const server = http.createServer(async (req, res) => {
     if (matchPathId && req.method === "PUT") {
       const id = matchPathId[1];
       const fields = [
-        "nombre", "cargo", "programa", "facultad", "correo", "telefono",
-        "sede", "imagen", "linkedin", "resumen", "perfil_completo",
-        "formacion", "areas_investigacion", "asignaturas",
+        "nombre", "cargo", "programa", "facultad", "correo",
+        "imagen", "linkedin", "perfil_completo", "formacion",
       ];
       const docenteData = {};
       for (const field of fields) {

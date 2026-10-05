@@ -84,23 +84,32 @@ async function setupMysqlTable() {
       id INT AUTO_INCREMENT PRIMARY KEY,
       nombre VARCHAR(255) NOT NULL,
       cargo VARCHAR(255) NOT NULL,
-      programa VARCHAR(255) NOT NULL,
-      facultad VARCHAR(255) NOT NULL,
+      programa VARCHAR(255),
+      facultad VARCHAR(255),
       correo VARCHAR(255),
-      telefono VARCHAR(100),
-      sede VARCHAR(255),
       imagen TEXT,
       linkedin VARCHAR(255),
-      resumen TEXT,
       perfil_completo TEXT,
       formacion TEXT,
-      areas_investigacion TEXT,
-      asignaturas TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   `;
   await pool.query(createTableQuery);
+  const removedColumns = ["telefono", "sede", "resumen", "areas_investigacion", "asignaturas"];
+  const [columns] = await pool.query("SHOW COLUMNS FROM docentes");
+  const existingColumns = new Set(columns.map((column) => column.Field));
+  const columnsToDrop = removedColumns.filter((column) => existingColumns.has(column));
+  if (columnsToDrop.length > 0) {
+    for (const column of columnsToDrop) {
+      await pool.query(`ALTER TABLE docentes DROP COLUMN ${column}`);
+    }
+  }
+  await pool.query(`
+    ALTER TABLE docentes
+      MODIFY COLUMN programa VARCHAR(255) NULL,
+      MODIFY COLUMN facultad VARCHAR(255) NULL
+  `);
 }
 
 async function setupPostgresTable() {
@@ -109,23 +118,31 @@ async function setupPostgresTable() {
       id SERIAL PRIMARY KEY,
       nombre VARCHAR(255) NOT NULL,
       cargo VARCHAR(255) NOT NULL,
-      programa VARCHAR(255) NOT NULL,
-      facultad VARCHAR(255) NOT NULL,
+      programa VARCHAR(255),
+      facultad VARCHAR(255),
       correo VARCHAR(255),
-      telefono VARCHAR(100),
-      sede VARCHAR(255),
       imagen TEXT,
       linkedin VARCHAR(255),
-      resumen TEXT,
       perfil_completo TEXT,
       formacion TEXT,
-      areas_investigacion TEXT,
-      asignaturas TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `;
   await pool.query(createTableQuery);
+  await pool.query(`
+    ALTER TABLE docentes
+      ALTER COLUMN programa DROP NOT NULL,
+      ALTER COLUMN facultad DROP NOT NULL
+  `);
+  await pool.query(`
+    ALTER TABLE docentes
+      DROP COLUMN IF EXISTS telefono,
+      DROP COLUMN IF EXISTS sede,
+      DROP COLUMN IF EXISTS resumen,
+      DROP COLUMN IF EXISTS areas_investigacion,
+      DROP COLUMN IF EXISTS asignaturas
+  `);
   await pool.query(`
     DO $$
     BEGIN
@@ -158,16 +175,15 @@ async function seedDatabase() {
   if (dbType === "mysql") {
     for (const d of DOCENTES_INICIALES) {
       await pool.query(
-        `INSERT INTO docentes (id, nombre, cargo, programa, facultad, correo, telefono, sede, imagen, linkedin, resumen, perfil_completo, formacion, areas_investigacion, asignaturas)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO docentes (id, nombre, cargo, programa, facultad, correo, imagen, linkedin, perfil_completo, formacion)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
          nombre=VALUES(nombre), cargo=VALUES(cargo), programa=VALUES(programa), facultad=VALUES(facultad),
-         correo=VALUES(correo), telefono=VALUES(telefono), sede=VALUES(sede), imagen=VALUES(imagen),
-         linkedin=VALUES(linkedin), resumen=VALUES(resumen), perfil_completo=VALUES(perfil_completo),
-         formacion=VALUES(formacion), areas_investigacion=VALUES(areas_investigacion), asignaturas=VALUES(asignaturas)`,
+         correo=VALUES(correo), imagen=VALUES(imagen), linkedin=VALUES(linkedin),
+         perfil_completo=VALUES(perfil_completo), formacion=VALUES(formacion)`,
         [
-          d.id, d.nombre, d.cargo, d.programa, d.facultad, d.correo, d.telefono, d.sede,
-          d.imagen, d.linkedin, d.resumen, d.perfil_completo, d.formacion, d.areas_investigacion, d.asignaturas
+          d.id, d.nombre, d.cargo, d.programa, d.facultad, d.correo,
+          d.imagen, d.linkedin, d.perfil_completo, d.formacion
         ]
       );
     }
@@ -175,16 +191,15 @@ async function seedDatabase() {
   } else if (dbType === "postgres") {
     for (const d of DOCENTES_INICIALES) {
       await pool.query(
-        `INSERT INTO docentes (id, nombre, cargo, programa, facultad, correo, telefono, sede, imagen, linkedin, resumen, perfil_completo, formacion, areas_investigacion, asignaturas)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        `INSERT INTO docentes (id, nombre, cargo, programa, facultad, correo, imagen, linkedin, perfil_completo, formacion)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          ON CONFLICT (id) DO UPDATE SET
          nombre=EXCLUDED.nombre, cargo=EXCLUDED.cargo, programa=EXCLUDED.programa, facultad=EXCLUDED.facultad,
-         correo=EXCLUDED.correo, telefono=EXCLUDED.telefono, sede=EXCLUDED.sede, imagen=EXCLUDED.imagen,
-         linkedin=EXCLUDED.linkedin, resumen=EXCLUDED.resumen, perfil_completo=EXCLUDED.perfil_completo,
-         formacion=EXCLUDED.formacion, areas_investigacion=EXCLUDED.areas_investigacion, asignaturas=EXCLUDED.asignaturas`,
+         correo=EXCLUDED.correo, imagen=EXCLUDED.imagen, linkedin=EXCLUDED.linkedin,
+         perfil_completo=EXCLUDED.perfil_completo, formacion=EXCLUDED.formacion`,
         [
-          d.id, d.nombre, d.cargo, d.programa, d.facultad, d.correo, d.telefono, d.sede,
-          d.imagen, d.linkedin, d.resumen, d.perfil_completo, d.formacion, d.areas_investigacion, d.asignaturas
+          d.id, d.nombre, d.cargo, d.programa, d.facultad, d.correo,
+          d.imagen, d.linkedin, d.perfil_completo, d.formacion
         ]
       );
     }
@@ -204,9 +219,9 @@ async function getAllDocentes({ search = "", programa = "" } = {}) {
     const params = [];
 
     if (searchTerm) {
-      query += " AND (LOWER(nombre) LIKE ? OR LOWER(cargo) LIKE ? OR LOWER(programa) LIKE ? OR LOWER(asignaturas) LIKE ? OR LOWER(resumen) LIKE ?)";
+      query += " AND (LOWER(nombre) LIKE ? OR LOWER(cargo) LIKE ? OR LOWER(programa) LIKE ?)";
       const wild = `%${searchTerm}%`;
-      params.push(wild, wild, wild, wild, wild);
+      params.push(wild, wild, wild);
     }
     if (programaTerm) {
       query += " AND LOWER(programa) LIKE ?";
@@ -221,7 +236,7 @@ async function getAllDocentes({ search = "", programa = "" } = {}) {
     let idx = 1;
 
     if (searchTerm) {
-      query += ` AND (LOWER(nombre) LIKE $${idx} OR LOWER(cargo) LIKE $${idx} OR LOWER(programa) LIKE $${idx} OR LOWER(asignaturas) LIKE $${idx} OR LOWER(resumen) LIKE $${idx})`;
+      query += ` AND (LOWER(nombre) LIKE $${idx} OR LOWER(cargo) LIKE $${idx} OR LOWER(programa) LIKE $${idx})`;
       params.push(`%${searchTerm}%`);
       idx++;
     }
@@ -250,34 +265,38 @@ async function getDocenteById(id) {
 }
 
 async function addDocente(docenteData) {
-  const nombre = docenteData.nombre || "Docente UNINPAHU";
-  const cargo = docenteData.cargo || "Docente Catedrático FITI";
-  const programa = docenteData.programa || "Ingeniería de Software";
-  const facultad = docenteData.facultad || "Facultad de Ingeniería y Tecnologías de la Información (FITI)";
-  const correo = docenteData.correo || `${nombre.toLowerCase().replace(/\s+/g, ".")}@uninpahu.edu.co`;
-  const telefono = docenteData.telefono || "+57 (601) 3323500";
-  const sede = docenteData.sede || "Sede Principal Bogotá (Calle 44 # 16-20)";
-  const imagen = docenteData.imagen || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80";
-  const linkedin = docenteData.linkedin || "https://www.linkedin.com/school/uninpahu/";
-  const resumen = docenteData.resumen || `${nombre} es docente en el programa de ${programa} en UNINPAHU.`;
-  const perfil_completo = docenteData.perfil_completo || `${nombre} cuenta con amplia experiencia académica y profesional en ${programa}, aportando al desarrollo tecnológico de la comunidad de UNINPAHU.`;
-  const formacion = docenteData.formacion || `Profesional en ${programa} | Especialista Universitario`;
-  const areas_investigacion = docenteData.areas_investigacion || "Ingeniería de Software, Bases de Datos Relacionales, Arquitecturas de TI.";
-  const asignaturas = docenteData.asignaturas || "Ingeniería de Software, Bases de Datos, Programación.";
+  const requiredFields = ["nombre", "cargo"];
+  for (const field of requiredFields) {
+    if (typeof docenteData[field] !== "string" || !docenteData[field].trim()) {
+      throw new Error(`El campo '${field}' es obligatorio.`);
+    }
+  }
+
+  const valueOrNull = (value) =>
+    typeof value === "string" && value.trim() ? value.trim() : null;
+  const nombre = docenteData.nombre.trim();
+  const cargo = docenteData.cargo.trim();
+  const programa = valueOrNull(docenteData.programa);
+  const facultad = valueOrNull(docenteData.facultad);
+  const correo = valueOrNull(docenteData.correo);
+  const imagen = valueOrNull(docenteData.imagen);
+  const linkedin = valueOrNull(docenteData.linkedin);
+  const perfil_completo = valueOrNull(docenteData.perfil_completo);
+  const formacion = valueOrNull(docenteData.formacion);
 
   if (dbType === "mysql") {
     const [result] = await pool.query(
-      `INSERT INTO docentes (nombre, cargo, programa, facultad, correo, telefono, sede, imagen, linkedin, resumen, perfil_completo, formacion, areas_investigacion, asignaturas)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [nombre, cargo, programa, facultad, correo, telefono, sede, imagen, linkedin, resumen, perfil_completo, formacion, areas_investigacion, asignaturas]
+      `INSERT INTO docentes (nombre, cargo, programa, facultad, correo, imagen, linkedin, perfil_completo, formacion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [nombre, cargo, programa, facultad, correo, imagen, linkedin, perfil_completo, formacion]
     );
     return await getDocenteById(result.insertId);
   } else if (dbType === "postgres") {
     const res = await pool.query(
-      `INSERT INTO docentes (nombre, cargo, programa, facultad, correo, telefono, sede, imagen, linkedin, resumen, perfil_completo, formacion, areas_investigacion, asignaturas)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      `INSERT INTO docentes (nombre, cargo, programa, facultad, correo, imagen, linkedin, perfil_completo, formacion)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [nombre, cargo, programa, facultad, correo, telefono, sede, imagen, linkedin, resumen, perfil_completo, formacion, areas_investigacion, asignaturas]
+      [nombre, cargo, programa, facultad, correo, imagen, linkedin, perfil_completo, formacion]
     );
     return res.rows[0];
   }
@@ -293,15 +312,10 @@ async function updateDocente(id, docenteData) {
     "programa",
     "facultad",
     "correo",
-    "telefono",
-    "sede",
     "imagen",
     "linkedin",
-    "resumen",
     "perfil_completo",
     "formacion",
-    "areas_investigacion",
-    "asignaturas",
   ].filter((field) => Object.prototype.hasOwnProperty.call(docenteData, field));
 
   if (fields.length === 0) {

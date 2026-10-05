@@ -13,9 +13,6 @@ import BottomThumbBar from "../components/BottomThumbBar";
 import { getDocente } from "../services/api";
 
 const profileFields = [
-  ["Formación", "formacion"],
-  ["Áreas de investigación", "areas_investigacion"],
-  ["Asignaturas", "asignaturas"],
   ["Perfil", "perfil_completo"],
 ];
 
@@ -84,14 +81,9 @@ export default function DatosDocenteDetalle({ navigation, route }) {
               <Text style={styles.sectionTitle}>Información de contacto</Text>
               <InfoRow label="Programa" value={docente.programa} />
               <InfoRow label="Correo" value={docente.correo} />
-              <InfoRow label="Teléfono" value={docente.telefono} />
-              <InfoRow label="Sede" value={docente.sede} />
               <InfoRow label="LinkedIn" value={docente.linkedin} />
             </View>
 
-            {docente.resumen ? (
-              <ProfileSection title="Resumen" value={docente.resumen} />
-            ) : null}
             {profileFields.map(([title, field]) =>
               docente[field] ? (
                 <ProfileSection key={field} title={title} value={docente[field]} />

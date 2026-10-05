@@ -21,17 +21,14 @@ const docenteFields = [
   ["programa", "Programa", false],
   ["facultad", "Facultad", false],
   ["correo", "Correo", false],
-  ["telefono", "Teléfono", false],
-  ["sede", "Sede", false],
   ["imagen", "URL de imagen", false],
   ["linkedin", "LinkedIn", false],
-  ["resumen", "Resumen", true],
   ["perfil_completo", "Perfil completo", true],
   ["formacion", "Formación", true],
-  ["areas_investigacion", "Áreas de investigación", true],
-  ["asignaturas", "Asignaturas", true],
 ];
 
+const requiredDocenteFields = new Set(["nombre", "cargo"]);
+const hiddenOnCreateFields = new Set(["programa", "facultad", "formacion"]);
 const emptyDocente = Object.fromEntries(docenteFields.map(([key]) => [key, ""]));
 
 export default function DatosDocente({ navigation }) {
@@ -86,8 +83,8 @@ export default function DatosDocente({ navigation }) {
   };
 
   const saveDocente = async () => {
-    if (!formData.nombre.trim() || !formData.cargo.trim() || !formData.programa.trim() || !formData.facultad.trim()) {
-      setFormError("Completa nombre, cargo, programa y facultad.");
+    if (!formData.nombre.trim() || !formData.cargo.trim()) {
+      setFormError("Completa el nombre y el cargo.");
       return;
     }
 
@@ -97,7 +94,10 @@ export default function DatosDocente({ navigation }) {
       if (editingDocente) {
         await updateDocente(editingDocente.id, formData);
       } else {
-        await addDocente(formData);
+        const newDocente = Object.fromEntries(
+          Object.entries(formData).filter(([field]) => !hiddenOnCreateFields.has(field))
+        );
+        await addDocente(newDocente);
       }
       setFormVisible(false);
       await loadDocentes(search);
@@ -246,9 +246,13 @@ export default function DatosDocente({ navigation }) {
               {editingDocente ? "Editar docente" : "Agregar docente"}
             </Text>
             <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator>
-              {docenteFields.map(([key, label, multiline]) => (
+              {docenteFields
+                .filter(([key]) => editingDocente || !hiddenOnCreateFields.has(key))
+                .map(([key, label, multiline]) => (
                 <View key={key} style={styles.formField}>
-                  <Text style={styles.formLabel}>{label}</Text>
+                  <Text style={styles.formLabel}>
+                    {label}{requiredDocenteFields.has(key) ? " *" : " (opcional)"}
+                  </Text>
                   <TextInput
                     accessibilityLabel={label}
                     style={[styles.formInput, multiline && styles.multilineInput]}

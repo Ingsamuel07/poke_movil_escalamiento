@@ -7,15 +7,10 @@ const docenteQueryFields = [
   ["programa", "Programa académico", "Ingeniería de Software"],
   ["facultad", "Facultad", "Facultad FITI"],
   ["correo", "Correo institucional", "docente@uninpahu.edu.co"],
-  ["telefono", "Teléfono", "+57 601 3323500"],
-  ["sede", "Sede", "Bogotá"],
   ["imagen", "URL de imagen", "https://example.com/docente.jpg"],
   ["linkedin", "Perfil de LinkedIn", "https://linkedin.com/in/docente"],
-  ["resumen", "Resumen", "Perfil académico breve"],
   ["perfil_completo", "Perfil completo", "Trayectoria académica y profesional"],
   ["formacion", "Formación", "Profesional y especialista"],
-  ["areas_investigacion", "Áreas de investigación", "Ingeniería de Software"],
-  ["asignaturas", "Asignaturas", "Bases de Datos"],
 ];
 
 const docenteQueryParameters = docenteQueryFields.map(([name, description, example]) => ({
@@ -67,7 +62,7 @@ const swaggerDocument = {
             name: "search",
             in: "query",
             required: false,
-            description: "Filtro de búsqueda por nombre, cargo, áreas de investigación o asignaturas (Query Param)",
+            description: "Filtro de búsqueda por nombre, cargo o programa académico (Query Param)",
             schema: {
               type: "string",
               example: "morantes",
@@ -264,51 +259,11 @@ const swaggerDocument = {
         tags: ["Administración de la base de datos"],
         summary: "Agregar docente mediante Query Params (Sin Body Params)",
         description:
-          "Permite registrar un docente enviando exclusivamente parámetros de consulta. La solicitud no requiere parámetros en el body.",
-        parameters: [
-          {
-            name: "nombre",
-            in: "query",
-            required: true,
-            description: "Nombre completo del docente",
-            schema: { type: "string", example: "Ing. Samuel Docente Invitado" },
-          },
-          {
-            name: "cargo",
-            in: "query",
-            required: false,
-            description: "Cargo o especialidad",
-            schema: { type: "string", example: "Profesor Catedrático de Cloud Computing" },
-          },
-          {
-            name: "programa",
-            in: "query",
-            required: false,
-            description: "Programa académico",
-            schema: { type: "string", example: "Ingeniería de Software" },
-          },
-          {
-            name: "correo",
-            in: "query",
-            required: false,
-            description: "Correo institucional",
-            schema: { type: "string", example: "samuel.docente@uninpahu.edu.co" },
-          },
-          {
-            name: "resumen",
-            in: "query",
-            required: false,
-            description: "Resumen curricular breve",
-            schema: { type: "string", example: "Especialista en Microservicios Agnósticos y Arquitecturas Escalables." },
-          },
-          {
-            name: "perfil_completo",
-            in: "query",
-            required: false,
-            description: "Perfil biográfico y trayectoria completa",
-            schema: { type: "string", example: "Docente con más de 10 años impulsando proyectos de innovación tecnológica en UNINPAHU." },
-          },
-        ],
+          "Registra un docente sin body. Nombre y cargo son obligatorios. Programa, facultad, correo, imagen, LinkedIn y perfil completo son opcionales; si se omiten o se envían vacíos, quedan en NULL. No se asignan imágenes automáticas.",
+        parameters: docenteQueryParameters.map((parameter) => ({
+          ...parameter,
+          required: ["nombre", "cargo"].includes(parameter.name),
+        })),
         responses: {
           201: {
             description: "Docente insertado exitosamente en la base de datos relacional",
@@ -377,15 +332,10 @@ const swaggerDocument = {
           programa: { type: "string", example: "Ingeniería de Software" },
           facultad: { type: "string", example: "Facultad de Ingeniería y Tecnologías de la Información (FITI)" },
           correo: { type: "string", example: "emorantessa@uninpahu.edu.co" },
-          telefono: { type: "string", example: "+57 (601) 3323500 Ext. 192" },
-          sede: { type: "string", example: "Sede Principal Bogotá (Calle 44 # 16-20)" },
           imagen: { type: "string", example: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=80" },
           linkedin: { type: "string", example: "https://www.linkedin.com/in/elfar-didier-morantes-s%C3%A1nchez/" },
-          resumen: { type: "string", example: "Ingeniero Electrónico | Magíster en Educación y Elearning | Profesor Universitario e Instructor SENA..." },
           perfil_completo: { type: "string", example: "ELFAR DIDIER MORANTES SÁNCHEZ es Ingeniero Electrónico y Magíster en Educación y Elearning..." },
           formacion: { type: "string", example: "Ingeniero Electrónico | Magíster en Educación y Elearning..." },
-          areas_investigacion: { type: "string", example: "Arquitectura de Software, Microservicios Agnósticos, Cloud Computing..." },
-          asignaturas: { type: "string", example: "Arquitectura de Software, Microservicios y APIs, Desarrollo Web Fullstack, Bases de Datos Relacionales (MySQL)..." },
           created_at: { type: "string", example: "2026-10-03T12:00:00.000Z" },
           updated_at: { type: "string", example: "2026-10-03T12:00:00.000Z" },
         },

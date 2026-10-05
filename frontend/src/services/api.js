@@ -240,7 +240,9 @@ const requestDocentes = async (path, options = {}) => {
     throw new Error("El microservicio de docentes devolvió una respuesta no válida.");
   }
   if (!response.ok) {
-    throw new Error(data?.error || data?.mensaje || `Error HTTP ${response.status}`);
+    throw new Error(
+      data?.detalle || data?.error || data?.mensaje || `Error HTTP ${response.status}`
+    );
   }
   return data;
 };

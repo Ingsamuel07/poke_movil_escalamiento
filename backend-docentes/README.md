@@ -12,6 +12,7 @@ Se conecta a una base de datos relacional **MySQL o PostgreSQL** y recibe los da
 2. **Base de Datos Relacional (MySQL / PostgreSQL)**:
    - Tabla: `docentes`.
    - En el primer arranque crea la tabla y carga los datos iniciales si está vacía.
+   - En el arranque elimina las columnas `telefono`, `sede`, `resumen`, `areas_investigacion` y `asignaturas` si aún existen. Los datos almacenados en esas columnas se eliminan.
    - Las consultas y cambios se realizan directamente en la base de datos configurada.
 3. **Parámetros por Ruta (Path Params)**:
    - `GET /api/docentes/:id` (ej. `/api/docentes/1`).
@@ -63,7 +64,7 @@ npm start
 | `GET` | `/api/docentes` | Query Params (`?search=...&programa=...`) | Lista los docentes registrados en la base relacional con filtros opcionales. |
 | `GET` | `/api/docentes/:id` | Path Param (`/:id`) | Obtiene los detalles completos de un docente por su ID numérico. |
 | `GET` | `/api/docentes/buscar` | Query Param (`?q=...`) | Búsqueda por coincidencia en texto libre. |
-| `POST` | `/api/docentes/agregar?nombre=...&cargo=...` | Query Params; sin body | Registra un docente en la base de datos relacional. |
+| `POST` | `/api/docentes/agregar?nombre=...&cargo=...` | Query Params; sin body | Registra un docente. Nombre y cargo son obligatorios; los demás campos son opcionales y vacíos quedan como `NULL`. No se asigna imagen automática. |
 | `PUT` | `/api/docentes/:id?nombre=...&cargo=...` | Path y Query Params; sin body | Actualiza únicamente los campos enviados del docente. |
 | `DELETE` | `/api/docentes/:id` | Path Param; sin body | Elimina el docente indicado. |
 | `POST` | `/api/docentes/seed` | Sin body | Sincroniza los docentes iniciales de la Facultad FITI UNINPAHU. |
