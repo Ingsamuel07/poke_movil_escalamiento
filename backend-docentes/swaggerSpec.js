@@ -4,12 +4,10 @@
 const docenteQueryFields = [
   ["nombre", "Nombre completo", "ELFAR DIDIER MORANTES SANCHEZ"],
   ["cargo", "Cargo o especialidad", "Profesor Universitario"],
-  ["facultad", "Facultad", "Facultad FITI"],
   ["correo", "Correo institucional", "docente@uninpahu.edu.co"],
   ["imagen", "URL de imagen", "https://example.com/docente.jpg"],
   ["linkedin", "Perfil de LinkedIn", "https://linkedin.com/in/docente"],
   ["perfil_completo", "Perfil completo", "Trayectoria académica y profesional"],
-  ["formacion", "Formación", "Profesional y especialista"],
 ];
 
 const docenteQueryParameters = docenteQueryFields.map(([name, description, example]) => ({
@@ -248,7 +246,7 @@ const swaggerDocument = {
         tags: ["Administración de la base de datos"],
         summary: "Agregar docente mediante Query Params (Sin Body Params)",
         description:
-          "Registra un docente sin body. Nombre y cargo son obligatorios. Facultad, correo, imagen, LinkedIn y perfil completo son opcionales; si se omiten o se envían vacíos, quedan en NULL. No se asignan valores automáticos.",
+          "Registra un docente sin body. Nombre y cargo son obligatorios. Correo, imagen, LinkedIn y perfil completo son opcionales; si se omiten o se envían vacíos, quedan en NULL. No se asignan valores automáticos.",
         parameters: docenteQueryParameters.map((parameter) => ({
           ...parameter,
           required: ["nombre", "cargo"].includes(parameter.name),
@@ -318,14 +316,10 @@ const swaggerDocument = {
           id: { type: "integer", example: 1 },
           nombre: { type: "string", example: "ELFAR DIDIER MORANTES SANCHEZ" },
           cargo: { type: "string", example: "Profesor Universitario e Instructor SENA | Arquitecto de Software" },
-          facultad: { type: "string", example: "Facultad de Ingeniería y Tecnologías de la Información (FITI)" },
           correo: { type: "string", example: "emorantessa@uninpahu.edu.co" },
           imagen: { type: "string", example: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=80" },
           linkedin: { type: "string", example: "https://www.linkedin.com/in/elfar-didier-morantes-s%C3%A1nchez/" },
           perfil_completo: { type: "string", example: "ELFAR DIDIER MORANTES SÁNCHEZ es Ingeniero Electrónico y Magíster en Educación y Elearning..." },
-          formacion: { type: "string", example: "Ingeniero Electrónico | Magíster en Educación y Elearning..." },
-          created_at: { type: "string", example: "2026-10-03T12:00:00.000Z" },
-          updated_at: { type: "string", example: "2026-10-03T12:00:00.000Z" },
         },
       },
     },

@@ -86,37 +86,31 @@ async function setupMysqlTable() {
       id INT AUTO_INCREMENT PRIMARY KEY,
       nombre VARCHAR(255) NOT NULL,
       cargo VARCHAR(255) NOT NULL,
-      facultad VARCHAR(255),
       correo VARCHAR(255),
       imagen TEXT,
       linkedin VARCHAR(255),
-      perfil_completo TEXT,
-      formacion TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      perfil_completo TEXT
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   `;
   await pool.query(createTableQuery);
-  const removedColumns = [
-    "programa",
-    "telefono",
-    "sede",
-    "resumen",
-    "areas_investigacion",
-    "asignaturas",
-  ];
   const [columns] = await pool.query("SHOW COLUMNS FROM docentes");
-  const existingColumns = new Set(columns.map((column) => column.Field));
-  const columnsToDrop = removedColumns.filter((column) => existingColumns.has(column));
+  const validColumns = new Set([
+    "id",
+    "nombre",
+    "cargo",
+    "correo",
+    "imagen",
+    "linkedin",
+    "perfil_completo",
+  ]);
+  const columnsToDrop = columns
+    .map((column) => column.Field)
+    .filter((column) => !validColumns.has(column));
   if (columnsToDrop.length > 0) {
     for (const column of columnsToDrop) {
       await pool.query(`ALTER TABLE docentes DROP COLUMN ${column}`);
     }
   }
-  await pool.query(`
-    ALTER TABLE docentes
-      MODIFY COLUMN facultad VARCHAR(255) NULL
-  `);
 }
 
 async function setupPostgresTable() {
@@ -125,29 +119,31 @@ async function setupPostgresTable() {
       id SERIAL PRIMARY KEY,
       nombre VARCHAR(255) NOT NULL,
       cargo VARCHAR(255) NOT NULL,
-      facultad VARCHAR(255),
       correo VARCHAR(255),
       imagen TEXT,
       linkedin VARCHAR(255),
-      perfil_completo TEXT,
-      formacion TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      perfil_completo TEXT
     );
   `;
   await pool.query(createTableQuery);
   await pool.query(`
-    ALTER TABLE docentes
-      ALTER COLUMN facultad DROP NOT NULL
-  `);
-  await pool.query(`
-    ALTER TABLE docentes
-      DROP COLUMN IF EXISTS programa,
-      DROP COLUMN IF EXISTS telefono,
-      DROP COLUMN IF EXISTS sede,
-      DROP COLUMN IF EXISTS resumen,
-      DROP COLUMN IF EXISTS areas_investigacion,
-      DROP COLUMN IF EXISTS asignaturas
+    DO $$
+    DECLARE
+      existing_column RECORD;
+    BEGIN
+      FOR existing_column IN
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = 'docentes'
+          AND column_name NOT IN (
+            'id', 'nombre', 'cargo', 'correo', 'imagen', 'linkedin', 'perfil_completo'
+          )
+      LOOP
+        EXECUTE format('ALTER TABLE docentes DROP COLUMN %I', existing_column.column_name);
+      END LOOP;
+    END;
+    $$
   `);
   await pool.query(`
     DO $$
@@ -181,15 +177,14 @@ async function seedDatabase() {
   if (dbType === "mysql") {
     for (const d of DOCENTES_INICIALES) {
       await pool.query(
-        `INSERT INTO docentes (id, nombre, cargo, facultad, correo, imagen, linkedin, perfil_completo, formacion)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO docentes (id, nombre, cargo, correo, imagen, linkedin, perfil_completo)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
-         nombre=VALUES(nombre), cargo=VALUES(cargo), facultad=VALUES(facultad),
-         correo=VALUES(correo), imagen=VALUES(imagen), linkedin=VALUES(linkedin),
-         perfil_completo=VALUES(perfil_completo), formacion=VALUES(formacion)`,
+         nombre=VALUES(nombre), cargo=VALUES(cargo), correo=VALUES(correo),
+         imagen=VALUES(imagen), linkedin=VALUES(linkedin),
+         perfil_completo=VALUES(perfil_completo)`,
         [
-          d.id, d.nombre, d.cargo, d.facultad, d.correo,
-          d.imagen, d.linkedin, d.perfil_completo, d.formacion
+          d.id, d.nombre, d.cargo, d.correo, d.imagen, d.linkedin, d.perfil_completo
         ]
       );
     }
@@ -197,15 +192,14 @@ async function seedDatabase() {
   } else if (dbType === "postgres") {
     for (const d of DOCENTES_INICIALES) {
       await pool.query(
-        `INSERT INTO docentes (id, nombre, cargo, facultad, correo, imagen, linkedin, perfil_completo, formacion)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `INSERT INTO docentes (id, nombre, cargo, correo, imagen, linkedin, perfil_completo)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (id) DO UPDATE SET
-         nombre=EXCLUDED.nombre, cargo=EXCLUDED.cargo, facultad=EXCLUDED.facultad,
-         correo=EXCLUDED.correo, imagen=EXCLUDED.imagen, linkedin=EXCLUDED.linkedin,
-         perfil_completo=EXCLUDED.perfil_completo, formacion=EXCLUDED.formacion`,
+         nombre=EXCLUDED.nombre, cargo=EXCLUDED.cargo, correo=EXCLUDED.correo,
+         imagen=EXCLUDED.imagen, linkedin=EXCLUDED.linkedin,
+         perfil_completo=EXCLUDED.perfil_completo`,
         [
-          d.id, d.nombre, d.cargo, d.facultad, d.correo,
-          d.imagen, d.linkedin, d.perfil_completo, d.formacion
+          d.id, d.nombre, d.cargo, d.correo, d.imagen, d.linkedin, d.perfil_completo
         ]
       );
     }
@@ -270,26 +264,24 @@ async function addDocente(docenteData) {
 
   const nombre = docenteData.nombre.trim();
   const cargo = docenteData.cargo.trim();
-  const facultad = valueOrNull(docenteData.facultad);
   const correo = valueOrNull(docenteData.correo);
   const imagen = valueOrNull(docenteData.imagen);
   const linkedin = valueOrNull(docenteData.linkedin);
   const perfil_completo = valueOrNull(docenteData.perfil_completo);
-  const formacion = valueOrNull(docenteData.formacion);
 
   if (dbType === "mysql") {
     const [result] = await pool.query(
-      `INSERT INTO docentes (nombre, cargo, facultad, correo, imagen, linkedin, perfil_completo, formacion)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [nombre, cargo, facultad, correo, imagen, linkedin, perfil_completo, formacion]
+      `INSERT INTO docentes (nombre, cargo, correo, imagen, linkedin, perfil_completo)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [nombre, cargo, correo, imagen, linkedin, perfil_completo]
     );
     return await getDocenteById(result.insertId);
   } else if (dbType === "postgres") {
     const res = await pool.query(
-      `INSERT INTO docentes (nombre, cargo, facultad, correo, imagen, linkedin, perfil_completo, formacion)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO docentes (nombre, cargo, correo, imagen, linkedin, perfil_completo)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [nombre, cargo, facultad, correo, imagen, linkedin, perfil_completo, formacion]
+      [nombre, cargo, correo, imagen, linkedin, perfil_completo]
     );
     return res.rows[0];
   }
@@ -302,12 +294,10 @@ async function updateDocente(id, docenteData) {
   const fields = [
     "nombre",
     "cargo",
-    "facultad",
     "correo",
     "imagen",
     "linkedin",
     "perfil_completo",
-    "formacion",
   ].filter((field) => Object.prototype.hasOwnProperty.call(docenteData, field));
 
   if (fields.length === 0) {
@@ -324,7 +314,6 @@ async function updateDocente(id, docenteData) {
         ? docenteData[field].trim()
         : valueOrNull(docenteData[field])
     );
-    assignments.push("updated_at = CURRENT_TIMESTAMP");
     await pool.query(
       `UPDATE docentes SET ${assignments.join(", ")} WHERE id = ?`,
       [...values, numId]
@@ -337,7 +326,6 @@ async function updateDocente(id, docenteData) {
         ? docenteData[field].trim()
         : valueOrNull(docenteData[field])
     );
-    assignments.push("updated_at = CURRENT_TIMESTAMP");
     values.push(numId);
     const result = await pool.query(
       `UPDATE docentes SET ${assignments.join(", ")} WHERE id = $${values.length} RETURNING *`,

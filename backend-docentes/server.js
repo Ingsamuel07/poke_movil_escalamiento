@@ -187,11 +187,10 @@ const server = http.createServer(async (req, res) => {
       const nuevoDocente = await addDocente({
         nombre: searchParams.get("nombre"),
         cargo: searchParams.get("cargo"),
-        facultad: searchParams.get("facultad"),
         correo: searchParams.get("correo"),
         imagen: searchParams.get("imagen"),
+        linkedin: searchParams.get("linkedin"),
         perfil_completo: searchParams.get("perfil_completo"),
-        formacion: searchParams.get("formacion"),
       });
 
       return sendJson(res, 201, {
@@ -206,8 +205,7 @@ const server = http.createServer(async (req, res) => {
     if (matchPathId && req.method === "PUT") {
       const id = matchPathId[1];
       const fields = [
-        "nombre", "cargo", "facultad", "correo",
-        "imagen", "linkedin", "perfil_completo", "formacion",
+        "nombre", "cargo", "correo", "imagen", "linkedin", "perfil_completo",
       ];
       const docenteData = {};
       for (const field of fields) {

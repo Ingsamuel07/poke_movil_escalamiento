@@ -11,8 +11,9 @@ Se conecta a una base de datos relacional **MySQL o PostgreSQL** y recibe los da
 1. **Agnóstico y Ligero**: Sin dependencias de frameworks web. Utiliza únicamente el servidor HTTP estándar de Node.js.
 2. **Base de Datos Relacional (MySQL / PostgreSQL)**:
    - Tabla: `docentes`.
+   - Columnas utilizadas por el servicio: `id`, `nombre`, `cargo`, `correo`, `imagen`, `linkedin` y `perfil_completo`.
    - En el primer arranque crea la tabla y carga los datos iniciales si está vacía.
-   - En el arranque elimina las columnas `programa`, `telefono`, `sede`, `resumen`, `areas_investigacion` y `asignaturas` si aún existen. Los datos almacenados en esas columnas se eliminan.
+   - En el arranque elimina las columnas antiguas que no pertenecen a ese esquema. Los datos almacenados en esas columnas se eliminan.
    - Las consultas y cambios se realizan directamente en la base de datos configurada.
 3. **Parámetros por Ruta (Path Params)**:
    - `GET /api/docentes/:id` (ej. `/api/docentes/1`).

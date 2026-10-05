@@ -18,16 +18,13 @@ import { addDocente, deleteDocente, getDocentesList, updateDocente } from "../se
 const docenteFields = [
   ["nombre", "Nombre completo", false],
   ["cargo", "Cargo", false],
-  ["facultad", "Facultad", false],
   ["correo", "Correo", false],
   ["imagen", "URL de imagen", false],
   ["linkedin", "LinkedIn", false],
   ["perfil_completo", "Perfil completo", true],
-  ["formacion", "Formación", true],
 ];
 
 const requiredDocenteFields = new Set(["nombre", "cargo"]);
-const hiddenOnCreateFields = new Set(["facultad", "formacion"]);
 const emptyDocente = Object.fromEntries(docenteFields.map(([key]) => [key, ""]));
 
 export default function DatosDocente({ navigation }) {
@@ -93,10 +90,7 @@ export default function DatosDocente({ navigation }) {
       if (editingDocente) {
         await updateDocente(editingDocente.id, formData);
       } else {
-        const newDocente = Object.fromEntries(
-          Object.entries(formData).filter(([field]) => !hiddenOnCreateFields.has(field))
-        );
-        await addDocente(newDocente);
+        await addDocente(formData);
       }
       setFormVisible(false);
       await loadDocentes(search);
@@ -244,9 +238,7 @@ export default function DatosDocente({ navigation }) {
               {editingDocente ? "Editar docente" : "Agregar docente"}
             </Text>
             <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator>
-              {docenteFields
-                .filter(([key]) => editingDocente || !hiddenOnCreateFields.has(key))
-                .map(([key, label, multiline]) => (
+              {docenteFields.map(([key, label, multiline]) => (
                 <View key={key} style={styles.formField}>
                   <Text style={styles.formLabel}>
                     {label}{requiredDocenteFields.has(key) ? " *" : " (opcional)"}
