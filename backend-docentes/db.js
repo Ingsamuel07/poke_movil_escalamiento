@@ -4,6 +4,8 @@ const { DOCENTES_INICIALES } = require("./seedData");
 
 let pool = null;
 let dbType = "none";
+const valueOrNull = (value) =>
+  typeof value === "string" && value.trim() ? value.trim() : null;
 
 const connectionUri =
   process.env.MYSQL_URL ||
@@ -84,7 +86,6 @@ async function setupMysqlTable() {
       id INT AUTO_INCREMENT PRIMARY KEY,
       nombre VARCHAR(255) NOT NULL,
       cargo VARCHAR(255) NOT NULL,
-      programa VARCHAR(255),
       facultad VARCHAR(255),
       correo VARCHAR(255),
       imagen TEXT,
@@ -96,7 +97,14 @@ async function setupMysqlTable() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   `;
   await pool.query(createTableQuery);
-  const removedColumns = ["telefono", "sede", "resumen", "areas_investigacion", "asignaturas"];
+  const removedColumns = [
+    "programa",
+    "telefono",
+    "sede",
+    "resumen",
+    "areas_investigacion",
+    "asignaturas",
+  ];
   const [columns] = await pool.query("SHOW COLUMNS FROM docentes");
   const existingColumns = new Set(columns.map((column) => column.Field));
   const columnsToDrop = removedColumns.filter((column) => existingColumns.has(column));
@@ -107,7 +115,6 @@ async function setupMysqlTable() {
   }
   await pool.query(`
     ALTER TABLE docentes
-      MODIFY COLUMN programa VARCHAR(255) NULL,
       MODIFY COLUMN facultad VARCHAR(255) NULL
   `);
 }
@@ -118,7 +125,6 @@ async function setupPostgresTable() {
       id SERIAL PRIMARY KEY,
       nombre VARCHAR(255) NOT NULL,
       cargo VARCHAR(255) NOT NULL,
-      programa VARCHAR(255),
       facultad VARCHAR(255),
       correo VARCHAR(255),
       imagen TEXT,
@@ -132,11 +138,11 @@ async function setupPostgresTable() {
   await pool.query(createTableQuery);
   await pool.query(`
     ALTER TABLE docentes
-      ALTER COLUMN programa DROP NOT NULL,
       ALTER COLUMN facultad DROP NOT NULL
   `);
   await pool.query(`
     ALTER TABLE docentes
+      DROP COLUMN IF EXISTS programa,
       DROP COLUMN IF EXISTS telefono,
       DROP COLUMN IF EXISTS sede,
       DROP COLUMN IF EXISTS resumen,
@@ -175,14 +181,14 @@ async function seedDatabase() {
   if (dbType === "mysql") {
     for (const d of DOCENTES_INICIALES) {
       await pool.query(
-        `INSERT INTO docentes (id, nombre, cargo, programa, facultad, correo, imagen, linkedin, perfil_completo, formacion)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO docentes (id, nombre, cargo, facultad, correo, imagen, linkedin, perfil_completo, formacion)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
-         nombre=VALUES(nombre), cargo=VALUES(cargo), programa=VALUES(programa), facultad=VALUES(facultad),
+         nombre=VALUES(nombre), cargo=VALUES(cargo), facultad=VALUES(facultad),
          correo=VALUES(correo), imagen=VALUES(imagen), linkedin=VALUES(linkedin),
          perfil_completo=VALUES(perfil_completo), formacion=VALUES(formacion)`,
         [
-          d.id, d.nombre, d.cargo, d.programa, d.facultad, d.correo,
+          d.id, d.nombre, d.cargo, d.facultad, d.correo,
           d.imagen, d.linkedin, d.perfil_completo, d.formacion
         ]
       );
@@ -191,14 +197,14 @@ async function seedDatabase() {
   } else if (dbType === "postgres") {
     for (const d of DOCENTES_INICIALES) {
       await pool.query(
-        `INSERT INTO docentes (id, nombre, cargo, programa, facultad, correo, imagen, linkedin, perfil_completo, formacion)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `INSERT INTO docentes (id, nombre, cargo, facultad, correo, imagen, linkedin, perfil_completo, formacion)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT (id) DO UPDATE SET
-         nombre=EXCLUDED.nombre, cargo=EXCLUDED.cargo, programa=EXCLUDED.programa, facultad=EXCLUDED.facultad,
+         nombre=EXCLUDED.nombre, cargo=EXCLUDED.cargo, facultad=EXCLUDED.facultad,
          correo=EXCLUDED.correo, imagen=EXCLUDED.imagen, linkedin=EXCLUDED.linkedin,
          perfil_completo=EXCLUDED.perfil_completo, formacion=EXCLUDED.formacion`,
         [
-          d.id, d.nombre, d.cargo, d.programa, d.facultad, d.correo,
+          d.id, d.nombre, d.cargo, d.facultad, d.correo,
           d.imagen, d.linkedin, d.perfil_completo, d.formacion
         ]
       );
@@ -210,22 +216,17 @@ async function seedDatabase() {
   }
 }
 
-async function getAllDocentes({ search = "", programa = "" } = {}) {
+async function getAllDocentes({ search = "" } = {}) {
   const searchTerm = search ? search.trim().toLowerCase() : "";
-  const programaTerm = programa ? programa.trim().toLowerCase() : "";
 
   if (dbType === "mysql") {
     let query = "SELECT * FROM docentes WHERE 1=1";
     const params = [];
 
     if (searchTerm) {
-      query += " AND (LOWER(nombre) LIKE ? OR LOWER(cargo) LIKE ? OR LOWER(programa) LIKE ?)";
+      query += " AND (LOWER(nombre) LIKE ? OR LOWER(cargo) LIKE ?)";
       const wild = `%${searchTerm}%`;
-      params.push(wild, wild, wild);
-    }
-    if (programaTerm) {
-      query += " AND LOWER(programa) LIKE ?";
-      params.push(`%${programaTerm}%`);
+      params.push(wild, wild);
     }
     query += " ORDER BY id ASC";
     const [rows] = await pool.query(query, params);
@@ -236,13 +237,8 @@ async function getAllDocentes({ search = "", programa = "" } = {}) {
     let idx = 1;
 
     if (searchTerm) {
-      query += ` AND (LOWER(nombre) LIKE $${idx} OR LOWER(cargo) LIKE $${idx} OR LOWER(programa) LIKE $${idx})`;
+      query += ` AND (LOWER(nombre) LIKE $${idx} OR LOWER(cargo) LIKE $${idx})`;
       params.push(`%${searchTerm}%`);
-      idx++;
-    }
-    if (programaTerm) {
-      query += ` AND LOWER(programa) LIKE $${idx}`;
-      params.push(`%${programaTerm}%`);
       idx++;
     }
     query += " ORDER BY id ASC";
@@ -272,11 +268,8 @@ async function addDocente(docenteData) {
     }
   }
 
-  const valueOrNull = (value) =>
-    typeof value === "string" && value.trim() ? value.trim() : null;
   const nombre = docenteData.nombre.trim();
   const cargo = docenteData.cargo.trim();
-  const programa = valueOrNull(docenteData.programa);
   const facultad = valueOrNull(docenteData.facultad);
   const correo = valueOrNull(docenteData.correo);
   const imagen = valueOrNull(docenteData.imagen);
@@ -286,17 +279,17 @@ async function addDocente(docenteData) {
 
   if (dbType === "mysql") {
     const [result] = await pool.query(
-      `INSERT INTO docentes (nombre, cargo, programa, facultad, correo, imagen, linkedin, perfil_completo, formacion)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [nombre, cargo, programa, facultad, correo, imagen, linkedin, perfil_completo, formacion]
+      `INSERT INTO docentes (nombre, cargo, facultad, correo, imagen, linkedin, perfil_completo, formacion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [nombre, cargo, facultad, correo, imagen, linkedin, perfil_completo, formacion]
     );
     return await getDocenteById(result.insertId);
   } else if (dbType === "postgres") {
     const res = await pool.query(
-      `INSERT INTO docentes (nombre, cargo, programa, facultad, correo, imagen, linkedin, perfil_completo, formacion)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO docentes (nombre, cargo, facultad, correo, imagen, linkedin, perfil_completo, formacion)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [nombre, cargo, programa, facultad, correo, imagen, linkedin, perfil_completo, formacion]
+      [nombre, cargo, facultad, correo, imagen, linkedin, perfil_completo, formacion]
     );
     return res.rows[0];
   }
@@ -309,7 +302,6 @@ async function updateDocente(id, docenteData) {
   const fields = [
     "nombre",
     "cargo",
-    "programa",
     "facultad",
     "correo",
     "imagen",
@@ -327,7 +319,11 @@ async function updateDocente(id, docenteData) {
 
   if (dbType === "mysql") {
     const assignments = fields.map((field) => `${field} = ?`);
-    const values = fields.map((field) => docenteData[field]);
+    const values = fields.map((field) =>
+      field === "nombre" || field === "cargo"
+        ? docenteData[field].trim()
+        : valueOrNull(docenteData[field])
+    );
     assignments.push("updated_at = CURRENT_TIMESTAMP");
     await pool.query(
       `UPDATE docentes SET ${assignments.join(", ")} WHERE id = ?`,
@@ -336,7 +332,11 @@ async function updateDocente(id, docenteData) {
     return getDocenteById(numId);
   } else if (dbType === "postgres") {
     const assignments = fields.map((field, index) => `${field} = $${index + 1}`);
-    const values = fields.map((field) => docenteData[field]);
+    const values = fields.map((field) =>
+      field === "nombre" || field === "cargo"
+        ? docenteData[field].trim()
+        : valueOrNull(docenteData[field])
+    );
     assignments.push("updated_at = CURRENT_TIMESTAMP");
     values.push(numId);
     const result = await pool.query(

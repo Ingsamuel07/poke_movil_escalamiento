@@ -248,12 +248,11 @@ const requestDocentes = async (path, options = {}) => {
 };
 
 /**
- * Obtiene docentes utilizando Query Params (?search=...&programa=...)
+ * Obtiene docentes utilizando el Query Param de búsqueda opcional.
  */
-export const getDocentesList = async (search = "", programa = "") => {
+export const getDocentesList = async (search = "") => {
   const params = new URLSearchParams();
   if (search.trim()) params.set("search", search.trim());
-  if (programa.trim()) params.set("programa", programa.trim());
   const query = params.toString();
   const data = await requestDocentes(`/docentes${query ? `?${query}` : ""}`);
   return data.docentes;

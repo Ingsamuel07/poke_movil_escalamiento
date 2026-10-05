@@ -187,7 +187,6 @@ const server = http.createServer(async (req, res) => {
       const nuevoDocente = await addDocente({
         nombre: searchParams.get("nombre"),
         cargo: searchParams.get("cargo"),
-        programa: searchParams.get("programa"),
         facultad: searchParams.get("facultad"),
         correo: searchParams.get("correo"),
         imagen: searchParams.get("imagen"),
@@ -207,7 +206,7 @@ const server = http.createServer(async (req, res) => {
     if (matchPathId && req.method === "PUT") {
       const id = matchPathId[1];
       const fields = [
-        "nombre", "cargo", "programa", "facultad", "correo",
+        "nombre", "cargo", "facultad", "correo",
         "imagen", "linkedin", "perfil_completo", "formacion",
       ];
       const docenteData = {};
@@ -259,16 +258,15 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 9. LISTADO GENERAL CON QUERY PARAMS (/api/docentes?search=...&programa=...)
+    // 9. LISTADO GENERAL CON QUERY PARAMS (/api/docentes?search=...)
     if (pathname === "/api/docentes") {
       if (req.method === "GET") {
         const search = searchParams.get("search") || "";
-        const programa = searchParams.get("programa") || "";
-        const docentes = await getAllDocentes({ search, programa });
+        const docentes = await getAllDocentes({ search });
         return sendJson(res, 200, {
           total: docentes.length,
           motor_bd: getDbType(),
-          filtros: { search, programa },
+          filtros: { search },
           docentes,
         });
       }
@@ -280,7 +278,7 @@ const server = http.createServer(async (req, res) => {
       error: "Ruta no encontrada",
       ruta_solicitada: pathname,
       endpoints_disponibles: [
-        "GET /api/docentes (Query params: ?search=...&programa=...)",
+        "GET /api/docentes (Query params: ?search=...)",
         "GET /api/docentes/:id (Path param)",
         "PUT /api/docentes/:id?nombre=...&cargo=... (Path y query params, sin body)",
         "DELETE /api/docentes/:id (Path param)",

@@ -18,7 +18,6 @@ import { addDocente, deleteDocente, getDocentesList, updateDocente } from "../se
 const docenteFields = [
   ["nombre", "Nombre completo", false],
   ["cargo", "Cargo", false],
-  ["programa", "Programa", false],
   ["facultad", "Facultad", false],
   ["correo", "Correo", false],
   ["imagen", "URL de imagen", false],
@@ -28,7 +27,7 @@ const docenteFields = [
 ];
 
 const requiredDocenteFields = new Set(["nombre", "cargo"]);
-const hiddenOnCreateFields = new Set(["programa", "facultad", "formacion"]);
+const hiddenOnCreateFields = new Set(["facultad", "formacion"]);
 const emptyDocente = Object.fromEntries(docenteFields.map(([key]) => [key, ""]));
 
 export default function DatosDocente({ navigation }) {
@@ -143,7 +142,7 @@ export default function DatosDocente({ navigation }) {
           <TextInput
             accessibilityLabel="Buscar docentes"
             style={styles.searchInput}
-            placeholder="Buscar por nombre o programa"
+            placeholder="Buscar por nombre o cargo"
             placeholderTextColor="#788397"
             value={search}
             onChangeText={setSearch}
@@ -209,7 +208,6 @@ export default function DatosDocente({ navigation }) {
                 <View style={styles.teacherInfo}>
                   <Text style={styles.teacherName}>{docente.nombre}</Text>
                   <Text style={styles.role}>{docente.cargo}</Text>
-                  <Text style={styles.program}>{docente.programa}</Text>
                   <Text style={styles.more}>Ver perfil completo →</Text>
                 </View>
               </TouchableOpacity>
@@ -357,7 +355,6 @@ const styles = StyleSheet.create({
   teacherInfo: { flex: 1, marginLeft: 14 },
   teacherName: { color: "#111827", fontSize: 16, fontWeight: "800" },
   role: { color: "#525d6d", fontSize: 13, lineHeight: 18, marginTop: 4 },
-  program: { color: "#7a8493", fontSize: 12, marginTop: 5 },
   more: { color: "#c2410c", fontSize: 13, fontWeight: "700", marginTop: 9 },
   teacherActions: { flexDirection: "row", justifyContent: "flex-end", gap: 9, marginTop: 12 },
   editButton: { borderColor: "#c2410c", borderRadius: 8, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 7 },

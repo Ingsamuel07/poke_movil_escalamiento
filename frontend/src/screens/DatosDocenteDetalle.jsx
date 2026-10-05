@@ -79,7 +79,6 @@ export default function DatosDocenteDetalle({ navigation, route }) {
 
             <View style={styles.contactSection}>
               <Text style={styles.sectionTitle}>Información de contacto</Text>
-              <InfoRow label="Programa" value={docente.programa} />
               <InfoRow label="Correo" value={docente.correo} />
               <InfoRow label="LinkedIn" value={docente.linkedin} />
             </View>

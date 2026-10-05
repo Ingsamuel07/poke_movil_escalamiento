@@ -4,7 +4,6 @@
 const docenteQueryFields = [
   ["nombre", "Nombre completo", "ELFAR DIDIER MORANTES SANCHEZ"],
   ["cargo", "Cargo o especialidad", "Profesor Universitario"],
-  ["programa", "Programa académico", "Ingeniería de Software"],
   ["facultad", "Facultad", "Facultad FITI"],
   ["correo", "Correo institucional", "docente@uninpahu.edu.co"],
   ["imagen", "URL de imagen", "https://example.com/docente.jpg"],
@@ -56,26 +55,16 @@ const swaggerDocument = {
         tags: ["Docentes UNINPAHU"],
         summary: "Listar docentes con filtros opcionales (Query Params)",
         description:
-          "Recupera la lista de docentes registrados en la base de datos relacional. Permite filtrar por palabra clave o por programa académico utilizando parámetros de consulta.",
+          "Recupera la lista de docentes registrados en la base de datos relacional. Permite filtrar por nombre o cargo mediante un parámetro de consulta.",
         parameters: [
           {
             name: "search",
             in: "query",
             required: false,
-            description: "Filtro de búsqueda por nombre, cargo o programa académico (Query Param)",
+            description: "Filtro de búsqueda por nombre o cargo (Query Param)",
             schema: {
               type: "string",
               example: "morantes",
-            },
-          },
-          {
-            name: "programa",
-            in: "query",
-            required: false,
-            description: "Filtro por programa académico de UNINPAHU (Query Param)",
-            schema: {
-              type: "string",
-              example: "Ingeniería de Software",
             },
           },
         ],
@@ -259,7 +248,7 @@ const swaggerDocument = {
         tags: ["Administración de la base de datos"],
         summary: "Agregar docente mediante Query Params (Sin Body Params)",
         description:
-          "Registra un docente sin body. Nombre y cargo son obligatorios. Programa, facultad, correo, imagen, LinkedIn y perfil completo son opcionales; si se omiten o se envían vacíos, quedan en NULL. No se asignan imágenes automáticas.",
+          "Registra un docente sin body. Nombre y cargo son obligatorios. Facultad, correo, imagen, LinkedIn y perfil completo son opcionales; si se omiten o se envían vacíos, quedan en NULL. No se asignan valores automáticos.",
         parameters: docenteQueryParameters.map((parameter) => ({
           ...parameter,
           required: ["nombre", "cargo"].includes(parameter.name),
@@ -329,7 +318,6 @@ const swaggerDocument = {
           id: { type: "integer", example: 1 },
           nombre: { type: "string", example: "ELFAR DIDIER MORANTES SANCHEZ" },
           cargo: { type: "string", example: "Profesor Universitario e Instructor SENA | Arquitecto de Software" },
-          programa: { type: "string", example: "Ingeniería de Software" },
           facultad: { type: "string", example: "Facultad de Ingeniería y Tecnologías de la Información (FITI)" },
           correo: { type: "string", example: "emorantessa@uninpahu.edu.co" },
           imagen: { type: "string", example: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=80" },
