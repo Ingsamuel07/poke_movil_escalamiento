@@ -90,7 +90,7 @@ function getSwaggerHtml() {
 <body notranslate class="notranslate">
   <header class="uninpahu-topbar">
     <div class="title">🏛️ UNINPAHU - Microservicio Agnóstico de Docentes</div>
-    <div class="badge">Node.js HTTP Nativo + Base de Datos Relacional</div>
+    <div class="badge">Docentes UNINPAHU</div>
   </header>
   <div id="swagger-ui"></div>
   <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js"></script>

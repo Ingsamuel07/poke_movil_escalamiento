@@ -21,7 +21,7 @@ const docenteQueryParameters = docenteQueryFields.map(([name, description, examp
 const swaggerDocument = {
   openapi: "3.0.3",
   info: {
-    title: "Microservicio Docentes UNINPAHU (Node.js Agnóstico & BD Relacional en la Nube)",
+    title: "Microservicio Docentes UNINPAHU",
     version: "1.0.0",
   },
   servers: [
