@@ -16,7 +16,6 @@ import {
   testMicroservicesConnection,
   seedPokemons,
   seedAnime,
-  seedDocentes,
 } from "../services/api";
 
 export default function ApiConfigModal({ visible, onClose, onUpdated }) {
@@ -65,12 +64,12 @@ export default function ApiConfigModal({ visible, onClose, onUpdated }) {
     setTesting(false);
   };
 
-  const handleSeedBoth = async () => {
+  const handleSeedCatalogs = async () => {
     setSeeding(true);
-    setStatusMsg("Sembrando registros en bases de datos en la nube...");
+    setStatusMsg("Sincronizando Pokémon y anime...");
     try {
-      await Promise.all([seedPokemons(), seedAnime(), seedDocentes()]);
-      setStatusMsg("✅ Datos iniciales sincronizados en los tres microservicios");
+      await Promise.all([seedPokemons(), seedAnime()]);
+      setStatusMsg("✅ Datos de Pokémon y anime sincronizados");
       if (onUpdated) onUpdated();
     } catch (e) {
       setStatusMsg(`Aviso: ${e.message}`);
@@ -176,13 +175,13 @@ export default function ApiConfigModal({ visible, onClose, onUpdated }) {
 
               <TouchableOpacity
                 style={[styles.btn, styles.btnSeed]}
-                onPress={handleSeedBoth}
+                onPress={handleSeedCatalogs}
                 disabled={seeding}
               >
                 {seeding ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={styles.btnText}>SINCRONIZAR DATOS INICIALES</Text>
+                  <Text style={styles.btnText}>SINCRONIZAR POKÉMON Y ANIME</Text>
                 )}
               </TouchableOpacity>
 

@@ -13,13 +13,21 @@ const {
   addDocente,
   updateDocente,
   deleteDocente,
-  seedDatabase,
   checkHealth,
   getDbType,
 } = require("./db");
 const { swaggerDocument } = require("./swaggerSpec");
 
 const PORT = process.env.PORT || 4000;
+const DOCENTE_FIELDS = ["nombre", "cargo", "correo", "imagen", "linkedin", "perfil_completo"];
+
+function getDocenteQueryParams(searchParams) {
+  return Object.fromEntries(
+    DOCENTE_FIELDS
+      .filter((field) => searchParams.has(field))
+      .map((field) => [field, searchParams.get(field)])
+  );
+}
 
 // Helper para enviar respuestas JSON con CORS habilitado
 function sendJson(res, statusCode, data) {
@@ -143,23 +151,7 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, health.status === "ok" ? 200 : 503, health);
     }
 
-    // 3. SEMBRADO / RESTABLECIMIENTO (POST /api/docentes/seed)
-    if (pathname === "/api/docentes/seed") {
-      if (req.method !== "POST") {
-        res.setHeader("Allow", "POST, OPTIONS");
-        return sendJson(res, 405, { error: "Use POST para sincronizar los docentes." });
-      }
-      const result = await seedDatabase();
-      const all = await getAllDocentes();
-      return sendJson(res, 200, {
-        mensaje: "Base de datos sincronizada con docentes oficiales de UNINPAHU",
-        total: all.length,
-        motor: getDbType(),
-        docentes: all,
-      });
-    }
-
-    // 4. BÚSQUEDA ESPECIALIZADA POR QUERY PARAM (/api/docentes/buscar?q=...)
+    // Búsqueda por Query Param (/api/docentes/buscar?q=...)
     if (pathname === "/api/docentes/buscar") {
       const query = searchParams.get("q") || "";
       const docentes = await getAllDocentes({ search: query });
@@ -171,7 +163,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 5. AGREGAR DOCENTE MEDIANTE QUERY PARAMS (POST /api/docentes/agregar?nombre=...)
+    // Crear docente mediante Query Params.
     if (pathname === "/api/docentes/agregar") {
       if (req.method !== "POST") {
         res.setHeader("Allow", "POST, OPTIONS");
@@ -184,14 +176,7 @@ const server = http.createServer(async (req, res) => {
           error: `Complete los parámetros obligatorios: ${missingFields.join(", ")}.`,
         });
       }
-      const nuevoDocente = await addDocente({
-        nombre: searchParams.get("nombre"),
-        cargo: searchParams.get("cargo"),
-        correo: searchParams.get("correo"),
-        imagen: searchParams.get("imagen"),
-        linkedin: searchParams.get("linkedin"),
-        perfil_completo: searchParams.get("perfil_completo"),
-      });
+      const nuevoDocente = await addDocente(getDocenteQueryParams(searchParams));
 
       return sendJson(res, 201, {
         mensaje: "Docente agregado exitosamente a la base de datos relacional",
@@ -200,17 +185,11 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 6. ACTUALIZAR DOCENTE POR PATH PARAM Y QUERY PARAMS (PUT /api/docentes/:id?...).
+    // Actualizar docente mediante Path Param y Query Params.
     const matchPathId = pathname.match(/^\/api\/docentes\/(\d+)$/);
     if (matchPathId && req.method === "PUT") {
       const id = matchPathId[1];
-      const fields = [
-        "nombre", "cargo", "correo", "imagen", "linkedin", "perfil_completo",
-      ];
-      const docenteData = {};
-      for (const field of fields) {
-        if (searchParams.has(field)) docenteData[field] = searchParams.get(field);
-      }
+      const docenteData = getDocenteQueryParams(searchParams);
       if (Object.keys(docenteData).length === 0) {
         return sendJson(res, 400, { error: "Indique al menos un campo para actualizar." });
       }
@@ -228,7 +207,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 7. ELIMINAR DOCENTE POR PATH PARAM (DELETE /api/docentes/:id).
+    // Eliminar docente mediante Path Param.
     if (matchPathId && req.method === "DELETE") {
       const id = matchPathId[1];
       const deleted = await deleteDocente(id);
@@ -241,7 +220,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 8. CONSULTA POR PATH PARAM (/api/docentes/:id)
+    // Consultar docente mediante Path Param.
     if (matchPathId && req.method === "GET") {
       const id = matchPathId[1];
       const docente = await getDocenteById(id);
@@ -256,7 +235,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 9. LISTADO GENERAL CON QUERY PARAMS (/api/docentes?search=...)
+    // Listar docentes con filtro opcional.
     if (pathname === "/api/docentes") {
       if (req.method === "GET") {
         const search = searchParams.get("search") || "";
@@ -268,7 +247,6 @@ const server = http.createServer(async (req, res) => {
           docentes,
         });
       }
-
     }
 
     // 404 - RUTA NO ENCONTRADA
@@ -282,7 +260,6 @@ const server = http.createServer(async (req, res) => {
         "DELETE /api/docentes/:id (Path param)",
         "GET /api/docentes/buscar?q=... (Query param)",
         "POST /api/docentes/agregar?nombre=...&cargo=... (Query params, sin body)",
-        "POST /api/docentes/seed (Sin body)",
         "GET /health (Estado del servicio)",
         "GET /api-docs (Swagger UI)",
         "GET /swagger.json (OpenAPI 3.0)",

@@ -1,7 +1,5 @@
 require("dotenv").config();
 
-const { DOCENTES_INICIALES } = require("./seedData");
-
 let pool = null;
 let dbType = "none";
 const valueOrNull = (value) =>
@@ -73,10 +71,6 @@ async function initDatabase() {
     await setupMysqlTable();
   } else {
     await setupPostgresTable();
-  }
-
-  if ((await getAllDocentes()).length === 0) {
-    await seedDatabase();
   }
 }
 
@@ -171,43 +165,6 @@ async function setupPostgresTable() {
     )
     FROM docentes
   `);
-}
-
-async function seedDatabase() {
-  if (dbType === "mysql") {
-    for (const d of DOCENTES_INICIALES) {
-      await pool.query(
-        `INSERT INTO docentes (id, nombre, cargo, correo, imagen, linkedin, perfil_completo)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE
-         nombre=VALUES(nombre), cargo=VALUES(cargo), correo=VALUES(correo),
-         imagen=VALUES(imagen), linkedin=VALUES(linkedin),
-         perfil_completo=VALUES(perfil_completo)`,
-        [
-          d.id, d.nombre, d.cargo, d.correo, d.imagen, d.linkedin, d.perfil_completo
-        ]
-      );
-    }
-    return { ok: true, count: DOCENTES_INICIALES.length, db: "mysql" };
-  } else if (dbType === "postgres") {
-    for (const d of DOCENTES_INICIALES) {
-      await pool.query(
-        `INSERT INTO docentes (id, nombre, cargo, correo, imagen, linkedin, perfil_completo)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         ON CONFLICT (id) DO UPDATE SET
-         nombre=EXCLUDED.nombre, cargo=EXCLUDED.cargo, correo=EXCLUDED.correo,
-         imagen=EXCLUDED.imagen, linkedin=EXCLUDED.linkedin,
-         perfil_completo=EXCLUDED.perfil_completo`,
-        [
-          d.id, d.nombre, d.cargo, d.correo, d.imagen, d.linkedin, d.perfil_completo
-        ]
-      );
-    }
-    await pool.query(
-      "SELECT setval(pg_get_serial_sequence('docentes', 'id'), COALESCE(MAX(id), 1), MAX(id) IS NOT NULL) FROM docentes"
-    );
-    return { ok: true, count: DOCENTES_INICIALES.length, db: "postgres" };
-  }
 }
 
 async function getAllDocentes({ search = "" } = {}) {
@@ -375,7 +332,6 @@ module.exports = {
   addDocente,
   updateDocente,
   deleteDocente,
-  seedDatabase,
   checkHealth,
   getDbType: () => dbType,
 };

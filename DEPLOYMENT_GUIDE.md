@@ -160,16 +160,17 @@ npm run start:docentes
 - Servicio corriendo en: `http://localhost:4000`
 - Documentación Swagger interactiva en: `http://localhost:4000/api-docs`
 - Especificación OpenAPI JSON en: `http://localhost:4000/swagger.json`
-- Configura `DATABASE_URL` con una base de datos relacional en la nube antes de iniciar el servicio. La tabla y los datos iniciales se crean automáticamente cuando la tabla está vacía.
+- Configura `DATABASE_URL` con una base de datos relacional en la nube antes de iniciar el servicio. El backend crea la tabla si no existe; los docentes se agregan únicamente mediante las operaciones CRUD.
 
 ### Endpoints Disponibles:
-1. `GET /api/docentes` (Query params opcionales: `?search=jorge&programa=Ingenieria`)
+1. `GET /api/docentes` (Query param opcional: `?search=jorge`)
 2. `GET /api/docentes/:id` (Path param: ej. `/api/docentes/1`)
 3. `GET /api/docentes/buscar?q=jimmy` (Query param especializado)
 4. `POST /api/docentes/agregar?nombre=...&cargo=...` (Query Params, sin body)
-5. `POST /api/docentes/seed` (Sin body; sincroniza docentes iniciales)
-6. `GET /health` (Estado de disponibilidad del servicio y base de datos)
-7. `GET /api-docs` (Swagger UI interactivo)
+5. `PUT /api/docentes/:id?correo=...` (Path y Query Params, sin body)
+6. `DELETE /api/docentes/:id` (Path param)
+7. `GET /health` (Estado de disponibilidad del servicio y base de datos)
+8. `GET /api-docs` (Swagger UI interactivo)
 
 ### Despliegue en Render.com:
 1. En [Render.com](https://render.com), haz clic en **New +** -> **Web Service**.

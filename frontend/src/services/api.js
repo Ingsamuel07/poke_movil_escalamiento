@@ -310,13 +310,6 @@ export const deleteDocente = async (id) => {
 };
 
 /**
- * Sincronizar docentes iniciales en la base de datos relacional
- */
-export const seedDocentes = async () => {
-  return requestDocentes("/docentes/seed", { method: "POST" });
-};
-
-/**
  * Comprobar estado de conexión con los tres microservicios
  */
 export const testMicroservicesConnection = async () => {

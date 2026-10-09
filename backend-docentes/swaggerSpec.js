@@ -23,13 +23,6 @@ const swaggerDocument = {
   info: {
     title: "Microservicio Docentes UNINPAHU (Node.js Agnóstico & BD Relacional en la Nube)",
     version: "1.0.0",
-    description:
-      "Microservicio desarrollado con el módulo HTTP nativo de Node.js, sin frameworks como Express. Conectado a una base de datos relacional en la nube (PostgreSQL o MySQL). Los datos de entrada se reciben mediante Path Params o Query Params; no se utilizan parámetros en el body.\n\n[ELFAR DIDIER MORANTES SANCHEZ - Facultad FITI UNINPAHU - Website](https://www.linkedin.com/in/elfar-didier-morantes-s%C3%A1nchez/)\n\n[Send email to ELFAR DIDIER MORANTES SANCHEZ - Facultad FITI UNINPAHU](mailto:emorantessa@uninpahu.edu.co)",
-    contact: {
-      name: "ELFAR DIDIER MORANTES SANCHEZ - Facultad FITI UNINPAHU",
-      email: "emorantessa@uninpahu.edu.co",
-      url: "https://www.linkedin.com/in/elfar-didier-morantes-s%C3%A1nchez/",
-    },
   },
   servers: [
     {
@@ -44,7 +37,7 @@ const swaggerDocument = {
     },
     {
       name: "Administración de la base de datos",
-      description: "Gestión de registros y sembrado en la base de datos relacional",
+      description: "Operaciones CRUD sobre la base de datos relacional",
     },
   ],
   paths: {
@@ -207,7 +200,7 @@ const swaggerDocument = {
         tags: ["Docentes UNINPAHU"],
         summary: "Búsqueda por palabra clave (Query Param)",
         description:
-          "Endpoint de consulta rápida mediante el parámetro de consulta ?q=... (Query Param) para buscar docentes por coincidencia en cualquier campo.",
+          "Endpoint de consulta rápida mediante ?q=... para buscar coincidencias en nombre o cargo.",
         parameters: [
           {
             name: "q",
@@ -261,31 +254,6 @@ const swaggerDocument = {
                   properties: {
                     mensaje: { type: "string", example: "Docente agregado exitosamente a la base de datos relacional" },
                     docente: { $ref: "#/components/schemas/Docente" },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    "/api/docentes/seed": {
-      post: {
-        tags: ["Administración de la base de datos"],
-        summary: "Sincronizar docentes iniciales (Sin Body Params)",
-        description:
-          "Sincroniza los registros iniciales de docentes en la base de datos relacional. No requiere parámetros en el body.",
-        responses: {
-          200: {
-            description: "Sembrado exitoso de docentes en la base de datos",
-            content: {
-              "application/json": {
-                schema: {
-                  type: "object",
-                  properties: {
-                    mensaje: { type: "string", example: "Base de datos sincronizada con 6 docentes de UNINPAHU" },
-                    total: { type: "integer", example: 6 },
-                    motor: { type: "string", example: "postgres" },
                   },
                 },
               },
